@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – Struk Pembayaran{% endblock %}
+{% block content %}
+
+<div style="max-width:520px;margin:2rem auto;">
+  <div style="text-align:center;margin-bottom:2rem;">
+    <p style="font-size:3.5rem;">🧾</p>
+    <h1>Transaksi <span class="text-accent">Berhasil!</span></h1>
+    <p class="text-muted">Terima kasih telah berbelanja di PYSTORE, {{ struk.pelanggan }}!</p>
+  </div>
+
+  <div class="card" style="border-color:#2d5c44;">
+    <div style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1rem;">
+      <h2 style="color:var(--accent);">PYSTORE</h2>
+      <p class="text-muted" style="font-size:0.85rem;">{{ struk.tanggal }}</p>
+      <p>Pelanggan: <strong>{{ struk.pelanggan }}</strong></p>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Barang</th>
+          <th style="text-align:center;">Qty</th>
+          <th style="text-align:right;">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in struk.produk %}
+        <tr>
+          <td>{{ item.nama }}</td>
+          <td style="text-align:center;">×{{ item.jumlah }}</td>
+          <td style="text-align:right;">Rp{{ "{:,}".format(item.subtotal) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+        <span class="text-muted">Total</span>
+        <strong>Rp{{ "{:,}".format(struk.total) }}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+        <span class="text-muted">Dibayar</span>
+        <strong>Rp{{ "{:,}".format(struk.bayar) }}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+        <span class="text-muted">Kembalian</span>
+        <strong class="text-success" style="font-size:1.2rem;">Rp{{ "{:,}".format(struk.kembalian) }}</strong>
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:1.5rem;padding-top:1rem;border-top:1px dashed var(--border);">
+      <p style="font-size:1.1rem;">🙏 Terima kasih!</p>
+      <p class="text-muted" style="font-size:0.85rem;">Semoga harimu menyenangkan 😊</p>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:1rem;margin-top:1.5rem;justify-content:center;">
+    <a href="/" class="btn btn-primary">🏪 Belanja Lagi</a>
+    <a href="/keranjang" class="btn btn-secondary">🛒 Keranjang</a>
+  </div>
+</div>
+
+{% endblock %}

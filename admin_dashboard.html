@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – Admin Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <h1>⚙️ Admin <span class="text-accent">Dashboard</span></h1>
+    <p class="text-muted">Kelola semua produk di toko</p>
+  </div>
+  <a href="/admin/logout" class="btn btn-secondary">Logout Admin</a>
+</div>
+
+<!-- TAMBAH BARANG -->
+<div class="card" style="margin-bottom:2rem;background:#1a1a10;border-color:#3a3010;">
+  <h3 style="margin-bottom:1.2rem;">➕ Tambah Barang Baru</h3>
+  <form method="POST" action="/admin/tambah">
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
+      <div class="form-group" style="flex:2;min-width:160px;margin:0;">
+        <label>Nama Barang</label>
+        <input type="text" name="nama" placeholder="Contoh: Kopi Sachet..." required>
+      </div>
+      <div class="form-group" style="flex:1;min-width:120px;margin:0;">
+        <label>Harga (Rp)</label>
+        <input type="number" name="harga" placeholder="2500" min="0" required>
+      </div>
+      <div class="form-group" style="flex:3;min-width:200px;margin:0;">
+        <label>Link Gambar (URL)</label>
+        <input type="text" name="gambar" placeholder="https://... (kosongkan jika tidak ada)">
+      </div>
+      <button type="submit" class="btn btn-primary" style="padding:0.7rem 1.5rem;white-space:nowrap;">+ Tambah</button>
+    </div>
+  </form>
+</div>
+
+<!-- DAFTAR BARANG -->
+<div class="card">
+  <h3 style="margin-bottom:1.2rem;">📦 Daftar Barang ({{ barang|length }} item)</h3>
+  {% if not barang %}
+    <div style="text-align:center;padding:2rem;">
+      <p style="font-size:2rem;">📭</p>
+      <p class="text-muted">Belum ada barang. Tambahkan di atas!</p>
+    </div>
+  {% else %}
+    <div style="display:flex;flex-direction:column;gap:0.75rem;">
+      {% for b in barang %}
+      <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);flex-wrap:wrap;">
+        
+        <!-- Thumbnail -->
+        <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;background:#2a2a2a;flex-shrink:0;">
+          <img
+            src="{{ b.gambar if b.gambar else default_img }}"
+            alt="{{ b.nama }}"
+            style="width:100%;height:100%;object-fit:cover;"
+            onerror="this.src='{{ default_img }}'"
+          >
+        </div>
+
+        <!-- Info -->
+        <div style="flex:1;min-width:120px;">
+          <p style="font-weight:700;font-size:0.95rem;">{{ b.nama }}</p>
+          <p class="text-accent" style="font-weight:600;font-size:0.9rem;">Rp{{ "{:,}".format(b.harga) }}</p>
+          <p class="text-muted" style="font-size:0.72rem;margin-top:2px;word-break:break-all;">
+            {{ b.gambar[:50] + "..." if b.gambar and b.gambar|length > 50 else (b.gambar if b.gambar else "Tidak ada gambar") }}
+          </p>
+        </div>
+
+        <!-- Aksi -->
+        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
+          <a href="/admin/edit/{{ b.id }}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+          <a href="/admin/hapus/{{ b.id }}" class="btn btn-danger btn-sm"
+             onclick="return confirm('Yakin hapus {{ b.nama }}?')">🗑️ Hapus</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

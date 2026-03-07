@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – Edit Barang{% endblock %}
+{% block content %}
+
+<div style="max-width:520px;margin:2rem auto;">
+  <div class="page-header">
+    <h1>✏️ Edit <span class="text-accent">Barang</span></h1>
+    <p class="text-muted">Perbarui informasi produk</p>
+  </div>
+
+  <div class="card">
+
+    <!-- Preview Gambar -->
+    <div style="margin-bottom:1.2rem;">
+      <label>Preview Gambar</label>
+      <div style="width:100%;height:200px;border-radius:10px;overflow:hidden;background:#1f1f1f;border:1px solid var(--border);margin-top:0.4rem;">
+        <img
+          id="img-preview"
+          src="{{ item.gambar if item.gambar else default_img }}"
+          alt="{{ item.nama }}"
+          style="width:100%;height:100%;object-fit:cover;"
+          onerror="this.src='{{ default_img }}'"
+        >
+      </div>
+    </div>
+
+    <form method="POST" action="/admin/edit/{{ item.id }}">
+      <div class="form-group">
+        <label>Nama Barang</label>
+        <input type="text" name="nama" value="{{ item.nama }}" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>Harga (Rp)</label>
+        <input type="number" name="harga" value="{{ item.harga }}" min="0" required>
+      </div>
+      <div class="form-group">
+        <label>Link Gambar (URL)</label>
+        <input type="text" name="gambar" id="input-gambar" value="{{ item.gambar }}" placeholder="https://... (kosongkan jika tidak ada)"
+          oninput="updatePreview(this.value)">
+        <p class="text-muted" style="font-size:0.78rem;margin-top:0.3rem;">Paste link gambar dari internet. Preview akan langsung berubah.</p>
+      </div>
+      <div style="display:flex;gap:0.75rem;">
+        <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">💾 Simpan</button>
+        <a href="/admin/dashboard" class="btn btn-secondary">Batal</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function updatePreview(url) {
+  var img = document.getElementById('img-preview');
+  if (url.trim() === '') {
+    img.src = '{{ default_img }}';
+  } else {
+    img.src = url;
+    img.onerror = function() { this.src = '{{ default_img }}'; };
+  }
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – Daftar Produk{% endblock %}
+{% block content %}
+
+<div class="page-header">
+  <h1>🏪 Daftar <span class="text-accent">Produk</span></h1>
+  <p>Pilih produk favoritmu dan tambahkan ke keranjang</p>
+</div>
+
+{% if not barang %}
+  <div class="card" style="text-align:center;padding:3rem;">
+    <p style="font-size:3rem;">📦</p>
+    <h3>Toko Masih Kosong</h3>
+    <p class="text-muted" style="margin-top:0.5rem;">Silakan hubungi admin untuk menambahkan produk.</p>
+  </div>
+{% else %}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;">
+    {% for b in barang %}
+    <div class="card" style="display:flex;flex-direction:column;justify-content:space-between;gap:1rem;transition:border-color 0.2s;" onmouseover="this.style.borderColor='#f5c842'" onmouseout="this.style.borderColor='#2a2a2a'">
+      <div>
+        <div style="font-size:2rem;margin-bottom:0.5rem;">🛍️</div>
+        <h3>{{ b.nama }}</h3>
+        <p class="text-accent" style="font-size:1.3rem;font-weight:700;margin-top:0.3rem;">Rp{{ "{:,}".format(b.harga) }}</p>
+        <p class="text-muted" style="font-size:0.8rem;">per item</p>
+      </div>
+
+      {% if pembeli %}
+        <form method="POST" action="/tambah-keranjang" style="display:flex;flex-direction:column;gap:0.6rem;">
+          <input type="hidden" name="id_barang" value="{{ b.id }}">
+          <div class="qty-wrap">
+            <label style="margin:0;white-space:nowrap;">Jumlah:</label>
+            <input type="number" name="qty" value="1" min="1" max="100">
+          </div>
+          <button type="submit" class="btn btn-primary">+ Keranjang</button>
+        </form>
+      {% else %}
+        <a href="/login-pembeli" class="btn btn-secondary" style="text-align:center;">🔒 Login untuk Beli</a>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+{% endif %}
+
+{% if not pembeli %}
+<div class="card" style="margin-top:2rem;background:#1a1a10;border-color:#3a3010;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <h3>Belum Masuk?</h3>
+    <p class="text-muted">Kamu perlu login sebagai pembeli untuk menambahkan produk ke keranjang dan melakukan transaksi.</p>
+  </div>
+  <a href="/login-pembeli" class="btn btn-primary">Masuk sebagai Pembeli →</a>
+</div>
+{% endif %}
+
+{% endblock %}

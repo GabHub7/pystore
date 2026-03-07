@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}PYSTORE{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --surface2: #1f1f1f;
+      --border: #2a2a2a;
+      --accent: #f5c842;
+      --accent2: #ff6b35;
+      --text: #f0ece4;
+      --muted: #7a7a7a;
+      --success: #4caf82;
+      --danger: #e05252;
+      --info: #5b9cf6;
+      --warn: #f0a035;
+      --radius: 12px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--accent);
+      text-decoration: none;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--text); }
+    .nav-links { display: flex; align-items: center; gap: 0.5rem; }
+    .nav-links a, .nav-links button {
+      padding: 0.4rem 1rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-links a { color: var(--muted); background: transparent; }
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .btn-accent {
+      background: var(--accent) !important;
+      color: #000 !important;
+      font-weight: 700 !important;
+    }
+    .btn-accent:hover { opacity: 0.85; }
+    .btn-outline {
+      background: transparent !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+    }
+    .btn-outline:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
+    .badge {
+      background: var(--accent2);
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 1px 6px;
+      border-radius: 20px;
+      font-weight: 700;
+      margin-left: 4px;
+    }
+
+    /* FLASH */
+    .flashes { max-width: 1000px; margin: 1rem auto; padding: 0 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .flash {
+      padding: 0.75rem 1.2rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+    .flash.success { background: #1a3329; border: 1px solid #2d5c44; color: #7edbb0; }
+    .flash.error   { background: #2d1a1a; border: 1px solid #5c2d2d; color: #f08080; }
+    .flash.info    { background: #1a2240; border: 1px solid #2d3f6e; color: #8ab4f8; }
+    .flash.warning { background: #2d2010; border: 1px solid #5c4020; color: #f0b86e; }
+
+    /* MAIN */
+    main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* CARDS */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.55rem 1.2rem;
+      border-radius: 8px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 0.875rem;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { opacity: 0.85; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); }
+    .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+
+    /* FORM */
+    .form-group { margin-bottom: 1.2rem; }
+    label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    input[type="text"], input[type="number"], input[type="password"] {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    input:focus { outline: none; border-color: var(--accent); }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; }
+    th { font-family: 'Syne', sans-serif; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    td { padding: 1rem; border-bottom: 1px solid var(--border); font-size: 0.95rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* HEADINGS */
+    h1 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; }
+    h2 { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; }
+    h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-header p { color: var(--muted); margin-top: 0.3rem; }
+
+    .text-accent { color: var(--accent); }
+    .text-muted { color: var(--muted); }
+    .text-danger { color: var(--danger); }
+    .text-success { color: var(--success); }
+
+    /* Qty input */
+    .qty-wrap { display: flex; align-items: center; gap: 0.5rem; }
+    .qty-wrap input { width: 64px; text-align: center; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="/">PY<span>STORE</span></a>
+  <div class="nav-links">
+    <a href="/">🏪 Toko</a>
+    {% if session.get('pembeli_nama') %}
+      <a href="/keranjang">🛒 Keranjang<span class="badge">{{ session.get('keranjang', [])|length }}</span></a>
+      <a href="/logout-pembeli" class="btn-outline">Keluar ({{ session.pembeli_nama }})</a>
+    {% else %}
+      <a href="/login-pembeli" class="btn-accent">Masuk sebagai Pembeli</a>
+    {% endif %}
+    {% if session.get('admin_logged_in') %}
+      <a href="/admin/dashboard">⚙️ Admin</a>
+      <a href="/admin/logout" class="btn-outline">Logout Admin</a>
+    {% else %}
+      <a href="/admin">🔐 Admin</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+</body>
+</html>

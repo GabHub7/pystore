@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – Login Admin{% endblock %}
+{% block content %}
+
+<div style="max-width:420px;margin:4rem auto;">
+  <div class="page-header" style="text-align:center;">
+    <p style="font-size:3rem;">🔐</p>
+    <h1>Panel <span class="text-accent">Admin</span></h1>
+    <p class="text-muted">Masukkan password untuk mengakses panel admin</p>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="/admin">
+      <div class="form-group">
+        <label>Password Admin</label>
+        <input type="password" name="password" placeholder="Masukkan password..." autofocus>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.75rem;">
+        🔓 Masuk sebagai Admin
+      </button>
+    </form>
+  </div>
+
+  <div style="text-align:center;margin-top:1.5rem;">
+    <a href="/" class="text-muted" style="font-size:0.9rem;text-decoration:none;">← Kembali ke Toko</a>
+  </div>
+</div>
+
+{% endblock %}
