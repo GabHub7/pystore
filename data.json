@@ -1,0 +1,10 @@
+{
+  "barang": [
+    {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "gambar": ""},
+    {"id": 2, "nama": "Air Mineral", "harga": 2000, "gambar": ""},
+    {"id": 3, "nama": "Roti Tawar", "harga": 7000, "gambar": ""},
+    {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "gambar": ""},
+    {"id": 5, "nama": "Susu UHT", "harga": 5000, "gambar": ""}
+  ],
+  "next_id": 6
+}
