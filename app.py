@@ -1,48 +1,40 @@
 import os
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
+import json
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from datetime import datetime
-import json
 
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
-app.secret_key = "pystore-secret-key-2024"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'))
+app.secret_key = "pystore-vercel-secret-2024"
 
-DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
 ADMIN_PASSWORD = "admin1234"
+DEFAULT_IMG = "https://placehold.co/400x300?text=No+Image"
 
-# ===================== DATA HELPERS =====================
+# Data disimpan di memory (in-memory store)
+# Di Vercel data akan reset setiap server restart, tapi CRUD tetap berjalan
+STORE = {
+    "barang": [
+        {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "gambar": ""},
+        {"id": 2, "nama": "Air Mineral", "harga": 2000, "gambar": ""},
+        {"id": 3, "nama": "Roti Tawar", "harga": 7000, "gambar": ""},
+        {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "gambar": ""},
+        {"id": 5, "nama": "Susu UHT", "harga": 5000, "gambar": ""},
+    ],
+    "next_id": 6
+}
 
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        default = {
-            "barang": [
-                {"id": 1, "nama": "Indomie Goreng", "harga": 3000},
-                {"id": 2, "nama": "Air Mineral", "harga": 2000},
-                {"id": 3, "nama": "Roti Tawar", "harga": 7000},
-                {"id": 4, "nama": "Telur (1 butir)", "harga": 1500},
-                {"id": 5, "nama": "Susu UHT", "harga": 5000},
-            ],
-            "next_id": 6
-        }
-        save_data(default)
-        return default
-    with open(DATA_FILE, "r") as f:
-        return json.load(f)
+def get_barang():
+    return STORE["barang"]
 
-def save_data(data):
-    with open(DATA_FILE, "w") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-# ===================== PUBLIC / BERANDA =====================
+def get_next_id():
+    nid = STORE["next_id"]
+    STORE["next_id"] += 1
+    return nid
 
 @app.route("/")
 def index():
-    data = load_data()
-    logged_in = session.get("pembeli_nama")
-    return render_template("index.html", barang=data["barang"], pembeli=logged_in)
-
-# ===================== PEMBELI AUTH =====================
+    return render_template("index.html", barang=get_barang(),
+                           pembeli=session.get("pembeli_nama"), default_img=DEFAULT_IMG)
 
 @app.route("/login-pembeli", methods=["GET", "POST"])
 def login_pembeli():
@@ -64,8 +56,6 @@ def logout_pembeli():
     flash("Berhasil keluar dari panel pembeli.", "info")
     return redirect(url_for("index"))
 
-# ===================== KERANJANG =====================
-
 @app.route("/keranjang")
 def keranjang():
     if not session.get("pembeli_nama"):
@@ -73,7 +63,8 @@ def keranjang():
         return redirect(url_for("login_pembeli"))
     return render_template("keranjang.html",
                            keranjang=session.get("keranjang", []),
-                           pembeli=session["pembeli_nama"])
+                           pembeli=session["pembeli_nama"],
+                           default_img=DEFAULT_IMG)
 
 @app.route("/tambah-keranjang", methods=["POST"])
 def tambah_keranjang():
@@ -90,8 +81,7 @@ def tambah_keranjang():
         flash("Input tidak valid.", "error")
         return redirect(url_for("index"))
 
-    data = load_data()
-    item = next((b for b in data["barang"] if b["id"] == id_beli), None)
+    item = next((b for b in get_barang() if b["id"] == id_beli), None)
     if not item:
         flash("Barang tidak ditemukan.", "error")
         return redirect(url_for("index"))
@@ -106,6 +96,7 @@ def tambah_keranjang():
             "id": item["id"],
             "nama": item["nama"],
             "harga": item["harga"],
+            "gambar": item.get("gambar", ""),
             "jumlah": qty,
             "subtotal": item["harga"] * qty
         })
@@ -143,7 +134,7 @@ def bayar():
     struk = {
         "pelanggan": session["pembeli_nama"],
         "tanggal": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-        "items": list(keranjang),
+        "produk": list(keranjang),
         "total": total,
         "bayar": uang,
         "kembalian": kembalian
@@ -158,8 +149,6 @@ def struk_page():
     if not struk:
         return redirect(url_for("index"))
     return render_template("struk.html", struk=struk, pembeli=session.get("pembeli_nama"))
-
-# ===================== ADMIN =====================
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
@@ -186,14 +175,14 @@ def admin_dashboard():
     if not session.get("admin_logged_in"):
         flash("Akses ditolak. Silakan login sebagai admin.", "warning")
         return redirect(url_for("admin_login"))
-    data = load_data()
-    return render_template("admin_dashboard.html", barang=data["barang"])
+    return render_template("admin_dashboard.html", barang=get_barang(), default_img=DEFAULT_IMG)
 
 @app.route("/admin/tambah", methods=["POST"])
 def admin_tambah():
     if not session.get("admin_logged_in"):
         return redirect(url_for("admin_login"))
     nama = request.form.get("nama", "").strip()
+    gambar = request.form.get("gambar", "").strip()
     try:
         harga = int(request.form.get("harga", 0))
         if harga < 0:
@@ -205,10 +194,8 @@ def admin_tambah():
     if not nama:
         flash("Nama barang tidak boleh kosong!", "error")
         return redirect(url_for("admin_dashboard"))
-    data = load_data()
-    data["barang"].append({"id": data["next_id"], "nama": nama, "harga": harga})
-    data["next_id"] += 1
-    save_data(data)
+    nid = get_next_id()
+    STORE["barang"].append({"id": nid, "nama": nama, "harga": harga, "gambar": gambar})
     flash("✅ '" + nama + "' berhasil ditambahkan!", "success")
     return redirect(url_for("admin_dashboard"))
 
@@ -216,13 +203,13 @@ def admin_tambah():
 def admin_edit(item_id):
     if not session.get("admin_logged_in"):
         return redirect(url_for("admin_login"))
-    data = load_data()
-    item = next((b for b in data["barang"] if b["id"] == item_id), None)
+    item = next((b for b in STORE["barang"] if b["id"] == item_id), None)
     if not item:
         flash("Barang tidak ditemukan.", "error")
         return redirect(url_for("admin_dashboard"))
     if request.method == "POST":
         nama = request.form.get("nama", "").strip()
+        gambar = request.form.get("gambar", "").strip()
         try:
             harga = int(request.form.get("harga", 0))
             if harga < 0:
@@ -236,24 +223,22 @@ def admin_edit(item_id):
             return redirect(url_for("admin_edit", item_id=item_id))
         item["nama"] = nama
         item["harga"] = harga
-        save_data(data)
+        item["gambar"] = gambar
         flash("✅ Barang berhasil diperbarui!", "success")
         return redirect(url_for("admin_dashboard"))
-    return render_template("admin_edit.html", item=item)
+    return render_template("admin_edit.html", item=item, default_img=DEFAULT_IMG)
 
 @app.route("/admin/hapus/<int:item_id>")
 def admin_hapus(item_id):
     if not session.get("admin_logged_in"):
         return redirect(url_for("admin_login"))
-    data = load_data()
-    awal = len(data["barang"])
-    data["barang"] = [b for b in data["barang"] if b["id"] != item_id]
-    if len(data["barang"]) < awal:
-        save_data(data)
+    awal = len(STORE["barang"])
+    STORE["barang"] = [b for b in STORE["barang"] if b["id"] != item_id]
+    if len(STORE["barang"]) < awal:
         flash("🗑️ Barang berhasil dihapus.", "success")
     else:
         flash("Barang tidak ditemukan.", "error")
     return redirect(url_for("admin_dashboard"))
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    app.run(debug=False)
