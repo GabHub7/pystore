@@ -17,26 +17,35 @@
     <div class="card" style="padding:0;overflow:hidden;display:flex;flex-direction:column;transition:border-color 0.2s,transform 0.2s;"
       onmouseover="this.style.borderColor='#f5c842';this.style.transform='translateY(-3px)'"
       onmouseout="this.style.borderColor='#2a2a2a';this.style.transform='translateY(0)'">
-      <div style="width:100%;height:180px;overflow:hidden;background:#1f1f1f;display:flex;align-items:center;justify-content:center;">
+      <div style="width:100%;height:180px;overflow:hidden;background:#1f1f1f;display:flex;align-items:center;justify-content:center;position:relative;">
         {% if b.gambar %}
           <img src="{{ b.gambar }}" alt="{{ b.nama }}" style="width:100%;height:100%;object-fit:cover;"
             onerror="this.parentElement.innerHTML='<span style=font-size:3rem>🛍️</span>'">
         {% else %}
           <span style="font-size:3rem;">🛍️</span>
         {% endif %}
+        {% if b.stok is defined and b.stok <= 5 %}
+        <span style="position:absolute;top:8px;right:8px;background:var(--danger);color:#fff;font-size:0.7rem;font-weight:700;padding:3px 8px;border-radius:20px;">Hampir Habis!</span>
+        {% endif %}
       </div>
-      <div style="padding:1rem;display:flex;flex-direction:column;gap:0.75rem;flex:1;">
+      <div style="padding:1rem;display:flex;flex-direction:column;gap:0.6rem;flex:1;">
         <div>
           <h3 style="font-size:1rem;">{{ b.nama }}</h3>
           <p class="text-accent" style="font-size:1.25rem;font-weight:700;margin-top:0.2rem;">Rp{{ "{:,}".format(b.harga) }}</p>
-          <p class="text-muted" style="font-size:0.75rem;">per item</p>
+          {% if b.stok is defined %}
+          <p style="font-size:0.75rem;color:{% if b.stok <= 5 %}var(--danger){% elif b.stok <= 20 %}var(--warn){% else %}var(--muted){% endif %};">
+            Stok: {{ b.stok }}
+          </p>
+          {% endif %}
         </div>
-        {% if pembeli %}
+        {% if b.stok is defined and b.stok <= 0 %}
+          <div class="btn btn-secondary" style="text-align:center;justify-content:center;opacity:0.5;cursor:not-allowed;">❌ Stok Habis</div>
+        {% elif pembeli %}
           <form method="POST" action="/tambah-keranjang" style="display:flex;flex-direction:column;gap:0.5rem;">
             <input type="hidden" name="id_barang" value="{{ b.id }}">
             <div class="qty-wrap">
               <label style="margin:0;white-space:nowrap;font-size:0.8rem;">Qty:</label>
-              <input type="number" name="qty" value="1" min="1" max="100" style="font-size:0.9rem;">
+              <input type="number" name="qty" value="1" min="1" max="{{ b.stok if b.stok is defined else 99 }}" style="font-size:0.9rem;">
             </div>
             <button type="submit" class="btn btn-primary" style="justify-content:center;">+ Keranjang</button>
           </form>
