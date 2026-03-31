@@ -13,8 +13,8 @@ app.secret_key = "pystore-vercel-secret-2024"
 ADMIN_PASSWORD = "admin1234"
 DEFAULT_IMG = "https://placehold.co/400x300?text=No+Image"
 
-MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "Mid-server-uwVe-TFTn0XJrZSg0sjriPiV")
-MIDTRANS_CLIENT_KEY = os.environ.get("MIDTRANS_CLIENT_KEY", "Mid-client-R-das4Yrdavuv3Ld")
+MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "")
+MIDTRANS_CLIENT_KEY = os.environ.get("MIDTRANS_CLIENT_KEY", "")
 MIDTRANS_IS_PRODUCTION = False
 MIDTRANS_SNAP_URL = "https://app.sandbox.midtrans.com/snap/snap.js"
 MIDTRANS_API_URL = "https://app.sandbox.midtrans.com/snap/v1/transactions"
