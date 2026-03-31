@@ -1,29 +1,20 @@
 {% extends "base.html" %}
 {% block title %}PYSTORE – Edit Barang{% endblock %}
 {% block content %}
-
 <div style="max-width:520px;margin:2rem auto;">
   <div class="page-header">
     <h1>✏️ Edit <span class="text-accent">Barang</span></h1>
     <p class="text-muted">Perbarui informasi produk</p>
   </div>
-
   <div class="card">
-
-    <!-- Preview Gambar -->
     <div style="margin-bottom:1.2rem;">
       <label>Preview Gambar</label>
-      <div style="width:100%;height:200px;border-radius:10px;overflow:hidden;background:#1f1f1f;border:1px solid var(--border);margin-top:0.4rem;">
-        <img
-          id="img-preview"
-          src="{{ item.gambar if item.gambar else default_img }}"
-          alt="{{ item.nama }}"
+      <div style="width:100%;height:180px;border-radius:10px;overflow:hidden;background:#1f1f1f;border:1px solid var(--border);margin-top:0.4rem;display:flex;align-items:center;justify-content:center;">
+        <img id="img-preview" src="{{ item.gambar if item.gambar else default_img }}"
           style="width:100%;height:100%;object-fit:cover;"
-          onerror="this.src='{{ default_img }}'"
-        >
+          onerror="this.src='{{ default_img }}'">
       </div>
     </div>
-
     <form method="POST" action="/admin/edit/{{ item.id }}">
       <div class="form-group">
         <label>Nama Barang</label>
@@ -34,10 +25,23 @@
         <input type="number" name="harga" value="{{ item.harga }}" min="0" required>
       </div>
       <div class="form-group">
-        <label>Link Gambar (URL)</label>
-        <input type="text" name="gambar" id="input-gambar" value="{{ item.gambar }}" placeholder="https://... (kosongkan jika tidak ada)"
-          oninput="updatePreview(this.value)">
-        <p class="text-muted" style="font-size:0.78rem;margin-top:0.3rem;">Paste link gambar dari internet. Preview akan langsung berubah.</p>
+        <label>Gambar Produk</label>
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+          <button type="button" onclick="setMode('url')" id="btn-url"
+            style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#000;font-size:0.8rem;cursor:pointer;font-weight:700;">🔗 URL/Link</button>
+          <button type="button" onclick="setMode('lokal')" id="btn-lokal"
+            style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:0.8rem;cursor:pointer;">📁 Dari HP</button>
+        </div>
+        <div id="mode-url">
+          <input type="text" id="input-url" value="{{ item.gambar }}"
+            placeholder="https://..." oninput="syncUrl(this.value)">
+          <p class="text-muted" style="font-size:0.78rem;margin-top:0.3rem;">Preview berubah otomatis saat paste link.</p>
+        </div>
+        <div id="mode-lokal" style="display:none;">
+          <input type="file" id="input-file" accept="image/*" onchange="handleFile(this)"
+            style="width:100%;padding:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+        </div>
+        <input type="hidden" name="gambar" id="gambar-value" value="{{ item.gambar }}">
       </div>
       <div style="display:flex;gap:0.75rem;">
         <button type="submit" class="btn btn-primary" style="flex:1;justify-content:center;">💾 Simpan</button>
@@ -46,17 +50,32 @@
     </form>
   </div>
 </div>
-
 <script>
-function updatePreview(url) {
+function setMode(m) {
+  var isUrl = m==='url';
+  document.getElementById('mode-url').style.display = isUrl?'block':'none';
+  document.getElementById('mode-lokal').style.display = isUrl?'none':'block';
+  document.getElementById('btn-url').style.background = isUrl?'var(--accent)':'transparent';
+  document.getElementById('btn-url').style.color = isUrl?'#000':'var(--text)';
+  document.getElementById('btn-url').style.borderColor = isUrl?'var(--accent)':'var(--border)';
+  document.getElementById('btn-lokal').style.background = isUrl?'transparent':'var(--accent)';
+  document.getElementById('btn-lokal').style.color = isUrl?'var(--text)':'#000';
+  document.getElementById('btn-lokal').style.borderColor = isUrl?'var(--border)':'var(--accent)';
+}
+function syncUrl(url) {
+  document.getElementById('gambar-value').value = url;
   var img = document.getElementById('img-preview');
-  if (url.trim() === '') {
-    img.src = '{{ default_img }}';
-  } else {
-    img.src = url;
-    img.onerror = function() { this.src = '{{ default_img }}'; };
-  }
+  img.src = url || '{{ default_img }}';
+  img.onerror = function(){ this.src='{{ default_img }}'; };
+}
+function handleFile(input) {
+  if (!input.files||!input.files[0]) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    document.getElementById('gambar-value').value = e.target.result;
+    document.getElementById('img-preview').src = e.target.result;
+  };
+  r.readAsDataURL(input.files[0]);
 }
 </script>
-
 {% endblock %}
