@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – Bayar QRIS{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:2rem auto;text-align:center;">
+  <div class="page-header" style="text-align:center;">
+    <p style="font-size:3rem;">📷</p>
+    <h1>Bayar via <span class="text-accent">QRIS</span></h1>
+    <p class="text-muted">Scan QR code di bawah lalu konfirmasi</p>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <span class="text-muted">Total yang harus dibayar</span>
+      <strong class="text-accent" style="font-size:1.5rem;">Rp{{ "{:,}".format(total) }}</strong>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="text-muted">Order ID</span>
+      <span style="font-size:0.85rem;">{{ order_id }}</span>
+    </div>
+  </div>
+
+  <!-- QR Code -->
+  <div class="card" style="margin-bottom:1.5rem;">
+    <p style="font-weight:700;margin-bottom:1rem;">Scan QR Code ini:</p>
+    <div style="background:#fff;padding:1rem;border-radius:12px;display:inline-block;">
+      <img src="{{ qris_url }}" alt="QRIS" style="width:240px;height:240px;object-fit:contain;display:block;">
+    </div>
+    <p class="text-muted" style="margin-top:1rem;font-size:0.82rem;">
+      Buka GoPay / DANA / OVO / ShopeePay / m-Banking<br>
+      lalu scan QR code di atas
+    </p>
+  </div>
+
+  <!-- Konfirmasi -->
+  <div class="card" style="background:#1a1a10;border-color:#3a3010;">
+    <p style="font-weight:700;margin-bottom:0.5rem;">Sudah transfer?</p>
+    <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">
+      Klik tombol di bawah setelah pembayaran berhasil. Admin akan memverifikasi pesananmu.
+    </p>
+    <form method="POST" action="/konfirmasi-qris">
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.8rem;">
+        ✅ Saya Sudah Bayar
+      </button>
+    </form>
+    <a href="/keranjang" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:0.7rem;">
+      ← Kembali ke Keranjang
+    </a>
+  </div>
+</div>
+{% endblock %}
+
