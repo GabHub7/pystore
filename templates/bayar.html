@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – Pembayaran{% endblock %}
+{% block content %}
+
+<div style="max-width:480px;margin:2rem auto;text-align:center;">
+  <div class="page-header" style="text-align:center;">
+    <p style="font-size:3rem;">💳</p>
+    <h1>Proses <span class="text-accent">Pembayaran</span></h1>
+    <p class="text-muted">Halo <strong>{{ pembeli }}</strong>, selesaikan pembayaran kamu</p>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="text-muted">Total Pembayaran</span>
+      <strong class="text-accent" style="font-size:1.5rem;">Rp{{ "{:,}".format(total) }}</strong>
+    </div>
+  </div>
+
+  <button id="pay-button" class="btn btn-primary" style="width:100%;justify-content:center;padding:1rem;font-size:1rem;">
+    💳 Bayar Sekarang via Midtrans
+  </button>
+
+  <p class="text-muted" style="margin-top:1rem;font-size:0.8rem;">
+    Didukung: GoPay, DANA, OVO, ShopeePay, QRIS, Transfer Bank, dan lainnya
+  </p>
+
+  <a href="/keranjang" class="btn btn-secondary" style="margin-top:0.5rem;width:100%;justify-content:center;">
+    ← Kembali ke Keranjang
+  </a>
+</div>
+
+<script src="{{ snap_url }}" data-client-key="{{ client_key }}"></script>
+<script>
+document.getElementById('pay-button').onclick = function() {
+  snap.pay('{{ snap_token }}', {
+    onSuccess: function(result) {
+      fetch('/payment-success', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result)
+      }).then(function() {
+        window.location.href = '/struk';
+      });
+    },
+    onPending: function(result) {
+      fetch('/payment-success', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result)
+      }).then(function() {
+        window.location.href = '/struk';
+      });
+    },
+    onError: function(result) {
+      alert('Pembayaran gagal! Silakan coba lagi.');
+      window.location.href = '/keranjang';
+    },
+    onClose: function() {
+      alert('Kamu menutup popup pembayaran sebelum selesai.');
+    }
+  });
+};
+</script>
+
+{% endblock %}
