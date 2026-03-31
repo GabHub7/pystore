@@ -1,6 +1,9 @@
 import os
 import json
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+import hashlib
+import base64
+import requests
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -10,8 +13,12 @@ app.secret_key = "pystore-vercel-secret-2024"
 ADMIN_PASSWORD = "admin1234"
 DEFAULT_IMG = "https://placehold.co/400x300?text=No+Image"
 
-# Data disimpan di memory (in-memory store)
-# Di Vercel data akan reset setiap server restart, tapi CRUD tetap berjalan
+MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "GANTI_SERVER_KEY_BARU")
+MIDTRANS_CLIENT_KEY = os.environ.get("MIDTRANS_CLIENT_KEY", "GANTI_CLIENT_KEY_BARU")
+MIDTRANS_IS_PRODUCTION = True
+MIDTRANS_SNAP_URL = "https://app.midtrans.com/snap/snap.js"
+MIDTRANS_API_URL = "https://app.midtrans.com/snap/v1/transactions"
+
 STORE = {
     "barang": [
         {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "gambar": ""},
@@ -119,29 +126,86 @@ def bayar():
     if not keranjang:
         flash("Keranjang kosong!", "error")
         return redirect(url_for("keranjang"))
-    try:
-        uang = int(request.form.get("uang", 0))
-    except ValueError:
-        flash("Masukkan jumlah uang yang valid.", "error")
-        return redirect(url_for("keranjang"))
 
     total = sum(k["subtotal"] for k in keranjang)
-    if uang < total:
-        flash("Uang kurang! Kekurangan Rp" + str(total - uang), "error")
+    order_id = "PYSTORE-" + datetime.now().strftime("%Y%m%d%H%M%S") + "-" + session["pembeli_nama"].replace(" ", "")[:8]
+
+    session["order_id"] = order_id
+    session["order_total"] = total
+    session["keranjang_backup"] = list(keranjang)
+
+    item_details = []
+    for k in keranjang:
+        item_details.append({
+            "id": str(k["id"]),
+            "price": k["harga"],
+            "quantity": k["jumlah"],
+            "name": k["nama"][:50]
+        })
+
+    payload = {
+        "transaction_details": {
+            "order_id": order_id,
+            "gross_amount": total
+        },
+        "item_details": item_details,
+        "customer_details": {
+            "first_name": session["pembeli_nama"]
+        },
+        "callbacks": {
+            "finish": url_for("struk_page", _external=True),
+            "error": url_for("keranjang", _external=True),
+            "pending": url_for("struk_page", _external=True)
+        }
+    }
+
+    try:
+        auth = base64.b64encode((MIDTRANS_SERVER_KEY + ":").encode()).decode()
+        resp = requests.post(
+            MIDTRANS_API_URL,
+            json=payload,
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": "Basic " + auth
+            },
+            timeout=15
+        )
+        result = resp.json()
+        if "token" in result:
+            session["keranjang"] = []
+            return render_template("bayar.html",
+                                   snap_token=result["token"],
+                                   client_key=MIDTRANS_CLIENT_KEY,
+                                   snap_url=MIDTRANS_SNAP_URL,
+                                   total=total,
+                                   pembeli=session["pembeli_nama"])
+        else:
+            flash("Gagal membuat transaksi: " + str(result.get("error_messages", result)), "error")
+            return redirect(url_for("keranjang"))
+    except Exception as e:
+        flash("Error koneksi ke Midtrans: " + str(e), "error")
         return redirect(url_for("keranjang"))
 
-    kembalian = uang - total
+@app.route("/payment-success", methods=["POST"])
+def payment_success():
+    data = request.get_json() or {}
+    keranjang = session.get("keranjang_backup", [])
+    total = session.get("order_total", 0)
     struk = {
-        "pelanggan": session["pembeli_nama"],
+        "pelanggan": session.get("pembeli_nama", "Tamu"),
         "tanggal": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-        "produk": list(keranjang),
+        "produk": keranjang,
         "total": total,
-        "bayar": uang,
-        "kembalian": kembalian
+        "bayar": total,
+        "kembalian": 0,
+        "order_id": session.get("order_id", "-"),
+        "payment_type": data.get("payment_type", "-"),
+        "transaction_status": data.get("transaction_status", "-")
     }
     session["struk"] = struk
-    session["keranjang"] = []
-    return redirect(url_for("struk_page"))
+    session.pop("keranjang_backup", None)
+    return jsonify({"status": "ok"})
 
 @app.route("/struk")
 def struk_page():
@@ -149,6 +213,18 @@ def struk_page():
     if not struk:
         return redirect(url_for("index"))
     return render_template("struk.html", struk=struk, pembeli=session.get("pembeli_nama"))
+
+@app.route("/notifikasi-midtrans", methods=["POST"])
+def notifikasi_midtrans():
+    data = request.get_json()
+    if not data:
+        return jsonify({"status": "ignored"}), 200
+    order_id = data.get("order_id", "")
+    signature_raw = order_id + data.get("status_code", "") + data.get("gross_amount", "") + MIDTRANS_SERVER_KEY
+    signature = hashlib.sha512(signature_raw.encode()).hexdigest()
+    if signature != data.get("signature_key", ""):
+        return jsonify({"status": "invalid signature"}), 403
+    return jsonify({"status": "ok"}), 200
 
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
