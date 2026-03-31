@@ -20,9 +20,15 @@
         <label>Nama Barang</label>
         <input type="text" name="nama" value="{{ item.nama }}" required autofocus>
       </div>
-      <div class="form-group">
-        <label>Harga (Rp)</label>
-        <input type="number" name="harga" value="{{ item.harga }}" min="0" required>
+      <div style="display:flex;gap:1rem;">
+        <div class="form-group" style="flex:1;">
+          <label>Harga (Rp)</label>
+          <input type="number" name="harga" value="{{ item.harga }}" min="0" required>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label>Stok</label>
+          <input type="number" name="stok" value="{{ item.stok if item.stok is defined else 0 }}" min="0" required>
+        </div>
       </div>
       <div class="form-group">
         <label>Gambar Produk</label>
@@ -33,8 +39,9 @@
             style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:0.8rem;cursor:pointer;">📁 Dari HP</button>
         </div>
         <div id="mode-url">
-          <input type="text" id="input-url" value="{{ item.gambar }}"
-            placeholder="https://..." oninput="syncUrl(this.value)">
+          <input type="text" id="input-url" placeholder="https://..."
+            value="{{ '' if item.gambar and item.gambar.startswith('data:') else item.gambar }}"
+            oninput="syncUrl(this.value)">
           <p class="text-muted" style="font-size:0.78rem;margin-top:0.3rem;">Preview berubah otomatis saat paste link.</p>
         </div>
         <div id="mode-lokal" style="display:none;">
@@ -52,15 +59,15 @@
 </div>
 <script>
 function setMode(m) {
-  var isUrl = m==='url';
-  document.getElementById('mode-url').style.display = isUrl?'block':'none';
-  document.getElementById('mode-lokal').style.display = isUrl?'none':'block';
-  document.getElementById('btn-url').style.background = isUrl?'var(--accent)':'transparent';
-  document.getElementById('btn-url').style.color = isUrl?'#000':'var(--text)';
-  document.getElementById('btn-url').style.borderColor = isUrl?'var(--accent)':'var(--border)';
-  document.getElementById('btn-lokal').style.background = isUrl?'transparent':'var(--accent)';
-  document.getElementById('btn-lokal').style.color = isUrl?'var(--text)':'#000';
-  document.getElementById('btn-lokal').style.borderColor = isUrl?'var(--border)':'var(--accent)';
+  var u = m==='url';
+  document.getElementById('mode-url').style.display = u?'block':'none';
+  document.getElementById('mode-lokal').style.display = u?'none':'block';
+  document.getElementById('btn-url').style.background = u?'var(--accent)':'transparent';
+  document.getElementById('btn-url').style.color = u?'#000':'var(--text)';
+  document.getElementById('btn-url').style.borderColor = u?'var(--accent)':'var(--border)';
+  document.getElementById('btn-lokal').style.background = u?'transparent':'var(--accent)';
+  document.getElementById('btn-lokal').style.color = u?'var(--text)':'#000';
+  document.getElementById('btn-lokal').style.borderColor = u?'var(--border)':'var(--accent)';
 }
 function syncUrl(url) {
   document.getElementById('gambar-value').value = url;
