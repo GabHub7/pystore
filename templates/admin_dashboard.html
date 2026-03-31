@@ -1,13 +1,58 @@
 {% extends "base.html" %}
 {% block title %}PYSTORE – Admin Dashboard{% endblock %}
 {% block content %}
-
 <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
   <div>
     <h1>⚙️ Admin <span class="text-accent">Dashboard</span></h1>
     <p class="text-muted">Kelola semua produk di toko</p>
   </div>
-  <a href="/admin/logout" class="btn btn-secondary">Logout Admin</a>
+  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+    <a href="/admin/orders" class="btn btn-secondary">📋 Daftar Order</a>
+    <a href="/admin/logout" class="btn btn-secondary">Logout</a>
+  </div>
+</div>
+
+<!-- QRIS MANAGEMENT -->
+<div class="card" style="margin-bottom:2rem;background:#0d1a2e;border-color:#1a3a6e;">
+  <h3 style="margin-bottom:0.5rem;">📷 Pengaturan QRIS</h3>
+  <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">Upload QRIS kamu agar pembeli bisa scan langsung ke ewallet-mu</p>
+
+  <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;">
+    <!-- Preview QRIS -->
+    <div style="flex-shrink:0;">
+      {% if qris_url %}
+      <div style="background:#fff;padding:0.5rem;border-radius:10px;width:120px;height:120px;overflow:hidden;">
+        <img src="{{ qris_url }}" alt="QRIS" style="width:100%;height:100%;object-fit:contain;">
+      </div>
+      <p class="text-success" style="font-size:0.78rem;margin-top:0.4rem;text-align:center;">✅ QRIS Aktif</p>
+      {% else %}
+      <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:10px;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
+        <span style="font-size:2.5rem;">📷</span>
+      </div>
+      <p class="text-muted" style="font-size:0.78rem;margin-top:0.4rem;text-align:center;">Belum ada QRIS</p>
+      {% endif %}
+    </div>
+
+    <!-- Form upload QRIS -->
+    <div style="flex:1;min-width:220px;">
+      <form method="POST" action="/admin/set-qris" enctype="multipart/form-data">
+        <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
+          <button type="button" onclick="setQrisMode('url')" id="qbtn-url"
+            style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#000;font-size:0.8rem;cursor:pointer;font-weight:700;">🔗 URL</button>
+          <button type="button" onclick="setQrisMode('file')" id="qbtn-file"
+            style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:0.8rem;cursor:pointer;">📁 Upload File</button>
+        </div>
+        <div id="qmode-url">
+          <input type="text" name="qris_url" placeholder="https://... link gambar QRIS kamu" style="margin-bottom:0.5rem;">
+        </div>
+        <div id="qmode-file" style="display:none;">
+          <input type="file" name="qris_file" accept="image/*"
+            style="width:100%;padding:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);margin-bottom:0.5rem;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">💾 Simpan QRIS</button>
+      </form>
+    </div>
+  </div>
 </div>
 
 <!-- TAMBAH BARANG -->
@@ -23,12 +68,28 @@
         <label>Harga (Rp)</label>
         <input type="number" name="harga" placeholder="2500" min="0" required>
       </div>
-      <div class="form-group" style="flex:3;min-width:200px;margin:0;">
-        <label>Link Gambar (URL)</label>
-        <input type="text" name="gambar" placeholder="https://... (kosongkan jika tidak ada)">
-      </div>
-      <button type="submit" class="btn btn-primary" style="padding:0.7rem 1.5rem;white-space:nowrap;">+ Tambah</button>
     </div>
+    <div class="form-group" style="margin-top:1rem;">
+      <label>Gambar Produk</label>
+      <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;">
+        <button type="button" onclick="setMode('url')" id="btn-url"
+          style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#000;font-size:0.8rem;cursor:pointer;font-weight:700;">🔗 URL/Link</button>
+        <button type="button" onclick="setMode('lokal')" id="btn-lokal"
+          style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:0.8rem;cursor:pointer;">📁 Dari HP</button>
+      </div>
+      <div id="mode-url">
+        <input type="text" id="input-url-tambah" placeholder="https://... (kosongkan jika tidak ada)" oninput="syncGambar(this.value)">
+      </div>
+      <div id="mode-lokal" style="display:none;">
+        <input type="file" id="input-file-tambah" accept="image/*" onchange="handleFile(this)"
+          style="width:100%;padding:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+      </div>
+      <div id="preview-tambah" style="display:none;margin-top:0.75rem;width:120px;height:90px;border-radius:8px;overflow:hidden;border:1px solid var(--border);">
+        <img id="img-preview-tambah" src="" style="width:100%;height:100%;object-fit:cover;">
+      </div>
+      <input type="hidden" name="gambar" id="gambar-tambah">
+    </div>
+    <button type="submit" class="btn btn-primary" style="padding:0.7rem 1.5rem;">+ Tambah Barang</button>
   </form>
 </div>
 
@@ -36,35 +97,23 @@
 <div class="card">
   <h3 style="margin-bottom:1.2rem;">📦 Daftar Barang ({{ barang|length }} item)</h3>
   {% if not barang %}
-    <div style="text-align:center;padding:2rem;">
-      <p style="font-size:2rem;">📭</p>
-      <p class="text-muted">Belum ada barang. Tambahkan di atas!</p>
-    </div>
+    <div style="text-align:center;padding:2rem;"><p class="text-muted">Belum ada barang.</p></div>
   {% else %}
     <div style="display:flex;flex-direction:column;gap:0.75rem;">
       {% for b in barang %}
       <div style="display:flex;align-items:center;gap:1rem;padding:0.75rem;background:var(--surface2);border-radius:10px;border:1px solid var(--border);flex-wrap:wrap;">
-        
-        <!-- Thumbnail -->
-        <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;background:#2a2a2a;flex-shrink:0;">
-          <img
-            src="{{ b.gambar if b.gambar else default_img }}"
-            alt="{{ b.nama }}"
-            style="width:100%;height:100%;object-fit:cover;"
-            onerror="this.src='{{ default_img }}'"
-          >
+        <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;background:#2a2a2a;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          {% if b.gambar %}
+          <img src="{{ b.gambar }}" alt="{{ b.nama }}" style="width:100%;height:100%;object-fit:cover;"
+            onerror="this.parentElement.innerHTML='<span style=font-size:1.8rem>🛍️</span>'">
+          {% else %}
+          <span style="font-size:1.8rem;">🛍️</span>
+          {% endif %}
         </div>
-
-        <!-- Info -->
         <div style="flex:1;min-width:120px;">
           <p style="font-weight:700;font-size:0.95rem;">{{ b.nama }}</p>
           <p class="text-accent" style="font-weight:600;font-size:0.9rem;">Rp{{ "{:,}".format(b.harga) }}</p>
-          <p class="text-muted" style="font-size:0.72rem;margin-top:2px;word-break:break-all;">
-            {{ b.gambar[:50] + "..." if b.gambar and b.gambar|length > 50 else (b.gambar if b.gambar else "Tidak ada gambar") }}
-          </p>
         </div>
-
-        <!-- Aksi -->
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
           <a href="/admin/edit/{{ b.id }}" class="btn btn-secondary btn-sm">✏️ Edit</a>
           <a href="/admin/hapus/{{ b.id }}" class="btn btn-danger btn-sm"
@@ -76,4 +125,44 @@
   {% endif %}
 </div>
 
+<script>
+function setQrisMode(m) {
+  document.getElementById('qmode-url').style.display = m==='url'?'block':'none';
+  document.getElementById('qmode-file').style.display = m==='file'?'block':'none';
+  document.getElementById('qbtn-url').style.background = m==='url'?'var(--accent)':'transparent';
+  document.getElementById('qbtn-url').style.color = m==='url'?'#000':'var(--text)';
+  document.getElementById('qbtn-url').style.borderColor = m==='url'?'var(--accent)':'var(--border)';
+  document.getElementById('qbtn-file').style.background = m==='file'?'var(--accent)':'transparent';
+  document.getElementById('qbtn-file').style.color = m==='file'?'#000':'var(--text)';
+  document.getElementById('qbtn-file').style.borderColor = m==='file'?'var(--accent)':'var(--border)';
+}
+function setMode(m) {
+  var isUrl = m==='url';
+  document.getElementById('mode-url').style.display = isUrl?'block':'none';
+  document.getElementById('mode-lokal').style.display = isUrl?'none':'block';
+  document.getElementById('btn-url').style.background = isUrl?'var(--accent)':'transparent';
+  document.getElementById('btn-url').style.color = isUrl?'#000':'var(--text)';
+  document.getElementById('btn-url').style.borderColor = isUrl?'var(--accent)':'var(--border)';
+  document.getElementById('btn-lokal').style.background = isUrl?'transparent':'var(--accent)';
+  document.getElementById('btn-lokal').style.color = isUrl?'var(--text)':'#000';
+  document.getElementById('btn-lokal').style.borderColor = isUrl?'var(--border)':'var(--accent)';
+}
+function syncGambar(url) {
+  document.getElementById('gambar-tambah').value = url;
+  var prev = document.getElementById('preview-tambah');
+  var img = document.getElementById('img-preview-tambah');
+  if (url) { img.src=url; prev.style.display='block'; img.onerror=function(){prev.style.display='none';}; }
+  else { prev.style.display='none'; }
+}
+function handleFile(input) {
+  if (!input.files||!input.files[0]) return;
+  var r = new FileReader();
+  r.onload = function(e) {
+    document.getElementById('gambar-tambah').value = e.target.result;
+    document.getElementById('img-preview-tambah').src = e.target.result;
+    document.getElementById('preview-tambah').style.display = 'block';
+  };
+  r.readAsDataURL(input.files[0]);
+}
+</script>
 {% endblock %}
