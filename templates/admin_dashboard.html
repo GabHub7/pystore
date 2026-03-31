@@ -12,38 +12,34 @@
   </div>
 </div>
 
-<!-- QRIS MANAGEMENT -->
+<!-- QRIS -->
 <div class="card" style="margin-bottom:2rem;background:#0d1a2e;border-color:#1a3a6e;">
   <h3 style="margin-bottom:0.5rem;">📷 Pengaturan QRIS</h3>
-  <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">Upload QRIS kamu agar pembeli bisa scan langsung ke ewallet-mu</p>
-
+  <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">Upload QRIS kamu agar pembeli bisa scan langsung ke ewalletmu</p>
   <div style="display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;">
-    <!-- Preview QRIS -->
     <div style="flex-shrink:0;">
       {% if qris_url %}
-      <div style="background:#fff;padding:0.5rem;border-radius:10px;width:120px;height:120px;overflow:hidden;">
+      <div style="background:#fff;padding:0.5rem;border-radius:10px;width:110px;height:110px;overflow:hidden;">
         <img src="{{ qris_url }}" alt="QRIS" style="width:100%;height:100%;object-fit:contain;">
       </div>
       <p class="text-success" style="font-size:0.78rem;margin-top:0.4rem;text-align:center;">✅ QRIS Aktif</p>
       {% else %}
-      <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:10px;width:120px;height:120px;display:flex;align-items:center;justify-content:center;">
+      <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:10px;width:110px;height:110px;display:flex;align-items:center;justify-content:center;">
         <span style="font-size:2.5rem;">📷</span>
       </div>
       <p class="text-muted" style="font-size:0.78rem;margin-top:0.4rem;text-align:center;">Belum ada QRIS</p>
       {% endif %}
     </div>
-
-    <!-- Form upload QRIS -->
     <div style="flex:1;min-width:220px;">
       <form method="POST" action="/admin/set-qris" enctype="multipart/form-data">
         <div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">
-          <button type="button" onclick="setQrisMode('url')" id="qbtn-url"
+          <button type="button" onclick="setQMode('url')" id="qbtn-url"
             style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:#000;font-size:0.8rem;cursor:pointer;font-weight:700;">🔗 URL</button>
-          <button type="button" onclick="setQrisMode('file')" id="qbtn-file"
-            style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:0.8rem;cursor:pointer;">📁 Upload File</button>
+          <button type="button" onclick="setQMode('file')" id="qbtn-file"
+            style="padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text);font-size:0.8rem;cursor:pointer;">📁 Upload</button>
         </div>
         <div id="qmode-url">
-          <input type="text" name="qris_url" placeholder="https://... link gambar QRIS kamu" style="margin-bottom:0.5rem;">
+          <input type="text" name="qris_url" placeholder="https://... link gambar QRIS" style="margin-bottom:0.5rem;">
         </div>
         <div id="qmode-file" style="display:none;">
           <input type="file" name="qris_file" accept="image/*"
@@ -59,14 +55,18 @@
 <div class="card" style="margin-bottom:2rem;background:#1a1a10;border-color:#3a3010;">
   <h3 style="margin-bottom:1.2rem;">➕ Tambah Barang Baru</h3>
   <form method="POST" action="/admin/tambah">
-    <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end;">
-      <div class="form-group" style="flex:2;min-width:160px;margin:0;">
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+      <div class="form-group" style="flex:3;min-width:160px;margin:0;">
         <label>Nama Barang</label>
         <input type="text" name="nama" placeholder="Contoh: Kopi Sachet..." required>
       </div>
-      <div class="form-group" style="flex:1;min-width:120px;margin:0;">
+      <div class="form-group" style="flex:2;min-width:110px;margin:0;">
         <label>Harga (Rp)</label>
         <input type="number" name="harga" placeholder="2500" min="0" required>
+      </div>
+      <div class="form-group" style="flex:1;min-width:90px;margin:0;">
+        <label>Stok</label>
+        <input type="number" name="stok" placeholder="100" min="0" value="100" required>
       </div>
     </div>
     <div class="form-group" style="margin-top:1rem;">
@@ -106,13 +106,21 @@
           {% if b.gambar %}
           <img src="{{ b.gambar }}" alt="{{ b.nama }}" style="width:100%;height:100%;object-fit:cover;"
             onerror="this.parentElement.innerHTML='<span style=font-size:1.8rem>🛍️</span>'">
-          {% else %}
-          <span style="font-size:1.8rem;">🛍️</span>
-          {% endif %}
+          {% else %}<span style="font-size:1.8rem;">🛍️</span>{% endif %}
         </div>
         <div style="flex:1;min-width:120px;">
           <p style="font-weight:700;font-size:0.95rem;">{{ b.nama }}</p>
           <p class="text-accent" style="font-weight:600;font-size:0.9rem;">Rp{{ "{:,}".format(b.harga) }}</p>
+          <p style="font-size:0.78rem;margin-top:2px;">
+            Stok:
+            {% if b.stok <= 5 %}
+            <span style="color:var(--danger);font-weight:700;">{{ b.stok }} (Hampir habis!)</span>
+            {% elif b.stok <= 20 %}
+            <span style="color:var(--warn);font-weight:700;">{{ b.stok }}</span>
+            {% else %}
+            <span class="text-muted">{{ b.stok }}</span>
+            {% endif %}
+          </p>
         </div>
         <div style="display:flex;gap:0.5rem;flex-shrink:0;">
           <a href="/admin/edit/{{ b.id }}" class="btn btn-secondary btn-sm">✏️ Edit</a>
@@ -126,7 +134,7 @@
 </div>
 
 <script>
-function setQrisMode(m) {
+function setQMode(m) {
   document.getElementById('qmode-url').style.display = m==='url'?'block':'none';
   document.getElementById('qmode-file').style.display = m==='file'?'block':'none';
   document.getElementById('qbtn-url').style.background = m==='url'?'var(--accent)':'transparent';
@@ -137,22 +145,22 @@ function setQrisMode(m) {
   document.getElementById('qbtn-file').style.borderColor = m==='file'?'var(--accent)':'var(--border)';
 }
 function setMode(m) {
-  var isUrl = m==='url';
-  document.getElementById('mode-url').style.display = isUrl?'block':'none';
-  document.getElementById('mode-lokal').style.display = isUrl?'none':'block';
-  document.getElementById('btn-url').style.background = isUrl?'var(--accent)':'transparent';
-  document.getElementById('btn-url').style.color = isUrl?'#000':'var(--text)';
-  document.getElementById('btn-url').style.borderColor = isUrl?'var(--accent)':'var(--border)';
-  document.getElementById('btn-lokal').style.background = isUrl?'transparent':'var(--accent)';
-  document.getElementById('btn-lokal').style.color = isUrl?'var(--text)':'#000';
-  document.getElementById('btn-lokal').style.borderColor = isUrl?'var(--border)':'var(--accent)';
+  var u = m==='url';
+  document.getElementById('mode-url').style.display = u?'block':'none';
+  document.getElementById('mode-lokal').style.display = u?'none':'block';
+  document.getElementById('btn-url').style.background = u?'var(--accent)':'transparent';
+  document.getElementById('btn-url').style.color = u?'#000':'var(--text)';
+  document.getElementById('btn-url').style.borderColor = u?'var(--accent)':'var(--border)';
+  document.getElementById('btn-lokal').style.background = u?'transparent':'var(--accent)';
+  document.getElementById('btn-lokal').style.color = u?'var(--text)':'#000';
+  document.getElementById('btn-lokal').style.borderColor = u?'var(--border)':'var(--accent)';
 }
 function syncGambar(url) {
   document.getElementById('gambar-tambah').value = url;
-  var prev = document.getElementById('preview-tambah');
+  var p = document.getElementById('preview-tambah');
   var img = document.getElementById('img-preview-tambah');
-  if (url) { img.src=url; prev.style.display='block'; img.onerror=function(){prev.style.display='none';}; }
-  else { prev.style.display='none'; }
+  if (url) { img.src=url; p.style.display='block'; img.onerror=function(){p.style.display='none';}; }
+  else { p.style.display='none'; }
 }
 function handleFile(input) {
   if (!input.files||!input.files[0]) return;
