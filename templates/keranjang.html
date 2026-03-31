@@ -1,39 +1,36 @@
 {% extends "base.html" %}
 {% block title %}PYSTORE – Keranjang{% endblock %}
 {% block content %}
-
 <div class="page-header">
   <h1>🧺 Keranjang <span class="text-accent">Belanja</span></h1>
-  <p>Halo, <strong>{{ pembeli }}</strong>! Cek belanjaan kamu di sini.</p>
+  <p>Halo, <strong>{{ pembeli }}</strong>!</p>
 </div>
-
 {% if not keranjang %}
   <div class="card" style="text-align:center;padding:3rem;">
     <p style="font-size:3rem;">🛒</p>
     <h3>Keranjang Kosong</h3>
-    <p class="text-muted" style="margin-top:0.5rem;">Yuk, pilih produk dari toko!</p>
-    <a href="/" class="btn btn-primary" style="margin-top:1.2rem;">Ke Toko →</a>
+    <a href="/" class="btn btn-primary" style="margin-top:1.2rem;">Ke Toko</a>
   </div>
 {% else %}
   {% set total = keranjang | sum(attribute='subtotal') %}
-
   <div class="card" style="margin-bottom:1.5rem;">
     <table>
-      <thead>
-        <tr>
-          <th>Nama Barang</th>
-          <th>Harga Satuan</th>
-          <th>Jumlah</th>
-          <th>Subtotal</th>
-          <th>Aksi</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Nama Barang</th><th>Harga</th><th>Qty</th><th>Subtotal</th><th>Aksi</th></tr></thead>
       <tbody>
         {% for item in keranjang %}
         <tr>
-          <td><strong>{{ item.nama }}</strong></td>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.75rem;">
+              {% if item.gambar %}
+              <img src="{{ item.gambar }}" alt="{{ item.nama }}"
+                style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"
+                onerror="this.style.display='none'">
+              {% endif %}
+              <strong>{{ item.nama }}</strong>
+            </div>
+          </td>
           <td class="text-muted">Rp{{ "{:,}".format(item.harga) }}</td>
-          <td>×{{ item.jumlah }}</td>
+          <td>x{{ item.jumlah }}</td>
           <td class="text-accent" style="font-weight:700;">Rp{{ "{:,}".format(item.subtotal) }}</td>
           <td><a href="/hapus-keranjang/{{ item.id }}" class="btn btn-danger btn-sm">Hapus</a></td>
         </tr>
@@ -42,24 +39,73 @@
     </table>
   </div>
 
-  <div class="card" style="max-width:480px;margin-left:auto;">
-    <h3 style="margin-bottom:1rem;">Ringkasan & Pembayaran</h3>
-    <div style="display:flex;justify-content:space-between;margin-bottom:0.75rem;">
+  <div class="card" style="max-width:520px;margin-left:auto;">
+    <h3 style="margin-bottom:1rem;">Ringkasan & Pilih Pembayaran</h3>
+    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
       <span class="text-muted">Total Belanja</span>
       <strong class="text-accent" style="font-size:1.3rem;">Rp{{ "{:,}".format(total) }}</strong>
     </div>
     <hr style="border-color:var(--border);margin-bottom:1rem;">
-    <form method="POST" action="/bayar">
+
+    <form method="POST" action="/pilih-bayar">
       <div class="form-group">
-        <label>Uang Tunai (Rp)</label>
-        <input type="number" name="uang" placeholder="Masukkan jumlah uang..." min="{{ total }}">
+        <label>Metode Pembayaran</label>
+        <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem;" id="metode-list">
+
+          <!-- Online -->
+          <label class="metode-card active" id="lbl-midtrans" onclick="pilihMetode('midtrans')"
+            style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--surface2);border:2px solid var(--accent);border-radius:10px;cursor:pointer;">
+            <input type="radio" name="metode" value="midtrans" checked style="accent-color:var(--accent);width:18px;height:18px;">
+            <div>
+              <p style="font-weight:700;margin:0;">💳 Bayar Online</p>
+              <p class="text-muted" style="font-size:0.78rem;margin:0;">GoPay, DANA, OVO, ShopeePay, QRIS dinamis, Transfer Bank</p>
+            </div>
+          </label>
+
+          <!-- QRIS statis -->
+          {% if qris_tersedia %}
+          <label class="metode-card" id="lbl-qris" onclick="pilihMetode('qris')"
+            style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;">
+            <input type="radio" name="metode" value="qris" style="accent-color:var(--accent);width:18px;height:18px;">
+            <div>
+              <p style="font-weight:700;margin:0;">📷 QRIS (Scan QR)</p>
+              <p class="text-muted" style="font-size:0.78rem;margin:0;">Scan QR lalu konfirmasi pembayaran</p>
+            </div>
+          </label>
+          {% endif %}
+
+          <!-- COD -->
+          <label class="metode-card" id="lbl-cod" onclick="pilihMetode('cod')"
+            style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;">
+            <input type="radio" name="metode" value="cod" style="accent-color:var(--accent);width:18px;height:18px;">
+            <div>
+              <p style="font-weight:700;margin:0;">🚚 COD (Bayar di Tempat)</p>
+              <p class="text-muted" style="font-size:0.78rem;margin:0;">Bayar tunai saat barang diterima</p>
+            </div>
+          </label>
+
+        </div>
       </div>
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.75rem;">
-        💳 Bayar Sekarang
+      <button type="submit" id="btn-lanjut" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.8rem;">
+        💳 Lanjut Bayar Online
       </button>
     </form>
     <a href="/" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:0.7rem;">+ Tambah Produk</a>
   </div>
 {% endif %}
 
+<script>
+var labels = { midtrans: 'lbl-midtrans', qris: 'lbl-qris', cod: 'lbl-cod' };
+var btnText = { midtrans: '💳 Lanjut Bayar Online', qris: '📷 Lanjut Bayar QRIS', cod: '🚚 Lanjut COD' };
+function pilihMetode(m) {
+  Object.keys(labels).forEach(function(k) {
+    var el = document.getElementById(labels[k]);
+    if (!el) return;
+    el.style.borderColor = k === m ? 'var(--accent)' : 'var(--border)';
+    var radio = el.querySelector('input[type=radio]');
+    if (radio) radio.checked = k === m;
+  });
+  document.getElementById('btn-lanjut').innerHTML = btnText[m] || '→ Lanjut';
+}
+</script>
 {% endblock %}
