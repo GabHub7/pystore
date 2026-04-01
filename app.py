@@ -15,7 +15,11 @@ MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "")
 MIDTRANS_CLIENT_KEY = os.environ.get("MIDTRANS_CLIENT_KEY", "")
 MIDTRANS_SNAP_URL = "https://app.sandbox.midtrans.com/snap/snap.js"
 MIDTRANS_API_URL = "https://app.sandbox.midtrans.com/snap/v1/transactions"
-QRIS_IMAGE_URL = os.environ.get("QRIS_IMAGE_URL", "")
+
+# JSONBin config
+JSONBIN_BIN_ID = os.environ.get("JSONBIN_BIN_ID", "69cc62dfaaba882197b1ce2d")
+JSONBIN_API_KEY = os.environ.get("JSONBIN_API_KEY", "$2a$10$ZM2UievsWh.L.67pqGxzqOLfou5wub3IHXNeEwj9Q1X4KpxPRYlte")
+JSONBIN_URL = "https://api.jsonbin.io/v3/b/" + JSONBIN_BIN_ID
 
 STORE = {
     "barang": [
@@ -25,25 +29,65 @@ STORE = {
         {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "gambar": "", "stok": 100},
         {"id": 5, "nama": "Susu UHT",        "harga": 5000, "gambar": "", "stok": 100},
     ],
-    "next_id": 6, "orders": [], "qris_url": ""
+    "next_id": 6,
+    "orders": []
 }
+
+# ===================== JSONBIN HELPERS =====================
+
+def jsonbin_get():
+    """Ambil data dari JSONBin."""
+    try:
+        resp = requests.get(
+            JSONBIN_URL + "/latest",
+            headers={"X-Master-Key": JSONBIN_API_KEY},
+            timeout=5
+        )
+        if resp.status_code == 200:
+            return resp.json().get("record", {})
+    except Exception:
+        pass
+    return {}
+
+def jsonbin_set(data):
+    """Simpan data ke JSONBin."""
+    try:
+        requests.put(
+            JSONBIN_URL,
+            json=data,
+            headers={
+                "X-Master-Key": JSONBIN_API_KEY,
+                "Content-Type": "application/json"
+            },
+            timeout=5
+        )
+    except Exception:
+        pass
+
+def get_qris():
+    """Ambil QRIS URL dari JSONBin."""
+    data = jsonbin_get()
+    return data.get("qris_url", "")
+
+def set_qris(url):
+    """Simpan QRIS URL ke JSONBin."""
+    jsonbin_set({"qris_url": url})
+
+# ===================== HELPERS =====================
 
 def get_barang(): return STORE["barang"]
 def get_next_id():
     nid = STORE["next_id"]; STORE["next_id"] += 1; return nid
 def add_order(o): STORE["orders"].append(o)
 def get_orders(): return STORE["orders"]
-def get_qris(): return STORE.get("qris_url") or QRIS_IMAGE_URL
 def item_by_id(iid): return next((b for b in STORE["barang"] if b["id"] == iid), None)
 
 def safe_gambar(gambar, item_id):
-    """Jangan simpan base64 di session, tandai dengan marker saja."""
     if gambar and gambar.startswith("data:"):
         return "__b64__" + str(item_id)
     return gambar
 
 def restore_gambar(keranjang):
-    """Pulihkan gambar base64 dari STORE saat ditampilkan."""
     result = []
     for k in keranjang:
         item = dict(k)
@@ -54,7 +98,6 @@ def restore_gambar(keranjang):
     return result
 
 def produk_for_order(keranjang):
-    """Versi produk tanpa gambar untuk disimpan di order."""
     return [{"id": k["id"], "nama": k["nama"], "harga": k["harga"],
              "jumlah": k["jumlah"], "subtotal": k["subtotal"]} for k in keranjang]
 
@@ -93,9 +136,10 @@ def keranjang():
         flash("Silakan masuk sebagai pembeli terlebih dahulu.", "warning")
         return redirect(url_for("login_pembeli"))
     restored = restore_gambar(session.get("keranjang", []))
+    qris = get_qris()
     return render_template("keranjang.html", keranjang=restored,
                            pembeli=session["pembeli_nama"], default_img=DEFAULT_IMG,
-                           qris_tersedia=bool(get_qris()))
+                           qris_tersedia=bool(qris))
 
 @app.route("/tambah-keranjang", methods=["POST"])
 def tambah_keranjang():
@@ -117,10 +161,10 @@ def tambah_keranjang():
     stok = b.get("stok", 0)
     keranjang = session.get("keranjang", [])
     existing = next((k for k in keranjang if k["id"] == id_beli), None)
-    sudah_di_keranjang = existing["jumlah"] if existing else 0
+    sudah = existing["jumlah"] if existing else 0
 
-    if stok < sudah_di_keranjang + qty:
-        flash("Stok tidak mencukupi! Sisa stok: " + str(stok - sudah_di_keranjang), "error")
+    if stok < sudah + qty:
+        flash("Stok tidak mencukupi! Sisa: " + str(max(0, stok - sudah)), "error")
         return redirect(url_for("index"))
 
     if existing:
@@ -199,7 +243,8 @@ def bayar_qris():
         flash("Keranjang kosong!", "error"); return redirect(url_for("keranjang"))
     qris = get_qris()
     if not qris:
-        flash("QRIS belum tersedia.", "warning"); return redirect(url_for("keranjang"))
+        flash("QRIS belum tersedia. Pilih metode lain.", "warning")
+        return redirect(url_for("keranjang"))
     keranjang = restore_gambar(raw)
     total = sum(k["subtotal"] for k in keranjang)
     order_id = "QRIS-" + datetime.now().strftime("%Y%m%d%H%M%S") + "-" + session["pembeli_nama"].replace(" ", "")[:8]
@@ -327,8 +372,9 @@ def admin_logout():
 def admin_dashboard():
     if not session.get("admin_logged_in"):
         return redirect(url_for("admin_login"))
+    qris = get_qris()
     return render_template("admin_dashboard.html", barang=get_barang(),
-                           default_img=DEFAULT_IMG, qris_url=get_qris())
+                           default_img=DEFAULT_IMG, qris_url=qris)
 
 @app.route("/admin/orders")
 def admin_orders():
@@ -344,13 +390,14 @@ def admin_set_qris():
         data = qris_file.read()
         ext = qris_file.filename.rsplit(".", 1)[-1].lower()
         mime = "image/png" if ext == "png" else "image/jpeg"
-        STORE["qris_url"] = "data:" + mime + ";base64," + base64.b64encode(data).decode()
-        flash("✅ QRIS berhasil diupload!", "success")
+        b64 = "data:" + mime + ";base64," + base64.b64encode(data).decode()
+        set_qris(b64)
+        flash("✅ QRIS berhasil diupload dan disimpan permanen!", "success")
     elif qris_url:
-        STORE["qris_url"] = qris_url
-        flash("✅ QRIS disimpan!", "success")
+        set_qris(qris_url)
+        flash("✅ QRIS berhasil disimpan permanen!", "success")
     else:
-        flash("Masukkan URL atau upload file!", "error")
+        flash("Masukkan URL atau upload file QRIS!", "error")
     return redirect(url_for("admin_dashboard"))
 
 @app.route("/admin/tambah", methods=["POST"])
@@ -409,4 +456,3 @@ def admin_hapus(item_id):
 
 if __name__ == "__main__":
     app.run(debug=False)
-
