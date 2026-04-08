@@ -39,11 +39,11 @@ DEFAULT_STORE = {
 # Inisialisasi STORE dari DEFAULT
 STORE = {
     "barang": [
-        {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "gambar": "https://placehold.co/400x300/FF6B6B/FFFFFF?text=Indomie+Goreng", "stok": 100},
-        {"id": 2, "nama": "Air Mineral 600ml", "harga": 2000, "gambar": "https://placehold.co/400x300/4ECDC4/FFFFFF?text=Air+Mineral", "stok": 100},
-        {"id": 3, "nama": "Roti Tawar", "harga": 7000, "gambar": "https://placehold.co/400x300/95E1D3/FFFFFF?text=Roti+Tawar", "stok": 100},
-        {"id": 4, "nama": "Telur Ayam (1 butir)", "harga": 1500, "gambar": "https://placehold.co/400x300/F38181/FFFFFF?text=Telur+Ayam", "stok": 100},
-        {"id": 5, "nama": "Susu UHT Full Cream", "harga": 5000, "gambar": "https://placehold.co/400x300/AA96DA/FFFFFF?text=Susu+UHT", "stok": 100},
+        {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "gambar": "https://yoline.co.id/media/products/ProductIndomie_goreng_special_jumbo_129gr.png", "stok": 100},
+        {"id": 2, "nama": "Air Mineral 600ml", "harga": 2000, "gambar": "https://images.tokopedia.net/img/cache/500-square/VqbcmM/2021/9/15/aqua-600ml.jpg", "stok": 100},
+        {"id": 3, "nama": "Roti Tawar", "harga": 7000, "gambar": "https://images.tokopedia.net/img/cache/500-square/VqbcmM/2020/8/12/roti-tawar.jpg", "stok": 100},
+        {"id": 4, "nama": "Telur Ayam (1 butir)", "harga": 1500, "gambar": "https://ichef.bbci.co.uk/ace/ws/800/cpsprodpb/16CE/production/_105483850_35a5b348-5c3f-45ca-94d7-4210aebc1a8e.jpg.webp", "stok": 100},
+        {"id": 5, "nama": "Susu UHT Full Cream", "harga": 5000, "gambar": "https://www.jni.co.id/cdn/shop/products/b1d42094-90a1-42a2-bf81-b183d95a2243-fullcream-946ml.jpg?v=1738552499", "stok": 100},
     ],
     "next_id": 6,
     "orders": [],
