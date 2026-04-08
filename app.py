@@ -5,14 +5,15 @@ import requests
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime
 
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'))
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "pystore-vercel-secret-2024")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin1234")
 DEFAULT_IMG = "https://placehold.co/400x300?text=No+Image"
 
-# Midtrans Config
-MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "").strip()
-MIDTRANS_CLIENT_KEY = os.environ.get("MIDTRANS_CLIENT_KEY", "").strip()
+# Midtrans Config (tanpa spasi)
+MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "")
+MIDTRANS_CLIENT_KEY = os.environ.get("MIDTRANS_CLIENT_KEY", "")
 MIDTRANS_SNAP_URL = "https://app.sandbox.midtrans.com/snap/snap.js"
 MIDTRANS_API_URL = "https://app.sandbox.midtrans.com/snap/v1/transactions"
 
@@ -21,7 +22,6 @@ JSONBIN_BIN_ID = os.environ.get("JSONBIN_BIN_ID", "")
 JSONBIN_API_KEY = os.environ.get("JSONBIN_API_KEY", "")
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{JSONBIN_BIN_ID}"
 
-# Default Store Data
 DEFAULT_STORE = {
     "barang": [
         {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "gambar": "", "stok": 100},
@@ -35,43 +35,38 @@ DEFAULT_STORE = {
     "qris_url": ""
 }
 
-# ==========================================
-# ✅ FIX: JSONBIN PERSISTENCE (Mencegah Data/Gambar Hilang)
-# ==========================================
-def jsonbin_get_bin():
+def jsonbin_get():
+    if not JSONBIN_BIN_ID or not JSONBIN_API_KEY:
+        return DEFAULT_STORE.copy()
     try:
-        resp = requests.get(JSONBIN_URL + "/latest", headers={"X-Master-Key": JSONBIN_API_KEY}, timeout=5)
+        resp = requests.get(f"{JSONBIN_URL}/latest", headers={"X-Master-Key": JSONBIN_API_KEY}, timeout=5)
         if resp.status_code == 200:
             return resp.json().get("record", DEFAULT_STORE)
-    except Exception:
-        pass
+    except: pass
     return DEFAULT_STORE.copy()
 
-def jsonbin_set_bin(data):
+def jsonbin_set(data):
+    if not JSONBIN_BIN_ID or not JSONBIN_API_KEY:
+        return
     try:
         requests.put(JSONBIN_URL, json=data, headers={"X-Master-Key": JSONBIN_API_KEY, "Content-Type": "application/json"}, timeout=5)
-    except Exception as e:
-        print(f"❌ Gagal simpan ke JSONBin: {e}")
+    except: pass
 
-# Load data saat startup
-STORE = jsonbin_get_bin()
-if "next_id" not in STORE: STORE["next_id"] = len(STORE["barang"]) + 1
+# Inisialisasi Data
+STORE = jsonbin_get()
+if "next_id" not in STORE: STORE["next_id"] = len(STORE.get("barang", [])) + 1
 if "orders" not in STORE: STORE["orders"] = []
 if "qris_url" not in STORE: STORE["qris_url"] = ""
 
-def save_store():
-    """Simpan seluruh state ke JSONBin"""
-    jsonbin_set_bin(STORE)
+def save_store(): jsonbin_set(STORE)
 
-# ==========================================
-# HELPERS
-# ==========================================
-def get_barang(): return STORE["barang"]
+# Helpers
+def get_barang(): return STORE.get("barang", [])
 def get_next_id():
     nid = STORE["next_id"]; STORE["next_id"] += 1; save_store(); return nid
 def add_order(o): STORE["orders"].append(o); save_store()
-def get_orders(): return STORE["orders"]
-def item_by_id(iid): return next((b for b in STORE["barang"] if b["id"] == iid), None)
+def get_orders(): return STORE.get("orders", [])
+def item_by_id(iid): return next((b for b in STORE.get("barang", []) if b.get("id") == iid), None)
 
 def safe_gambar(gambar, item_id):
     if gambar and gambar.startswith("data:"): return f"b64_{item_id}"
@@ -91,9 +86,7 @@ def produk_for_order(keranjang):
     return [{"id": k["id"], "nama": k["nama"], "harga": k["harga"],
              "jumlah": k["jumlah"], "subtotal": k["subtotal"]} for k in keranjang]
 
-# ==========================================
-# PUBLIC ROUTES
-# ==========================================
+# ================= PUBLIC ROUTES =================
 @app.route("/")
 def index():
     return render_template("index.html", barang=get_barang(),
@@ -119,18 +112,17 @@ def logout_pembeli():
     flash("Berhasil keluar.", "info")
     return redirect(url_for("index"))
 
-# ==========================================
-# KERANJANG
-# ==========================================
+# ================= KERANJANG =================
 @app.route("/keranjang")
 def keranjang():
     if not session.get("pembeli_nama"):
         flash("Silakan masuk sebagai pembeli terlebih dahulu.", "warning")
         return redirect(url_for("login_pembeli"))
     restored = restore_gambar(session.get("keranjang", []))
+    qris = STORE.get("qris_url", "")
     return render_template("keranjang.html", keranjang=restored,
                            pembeli=session["pembeli_nama"], default_img=DEFAULT_IMG,
-                           qris_tersedia=bool(STORE.get("qris_url")))
+                           qris_tersedia=bool(qris))
 
 @app.route("/tambah-keranjang", methods=["POST"])
 def tambah_keranjang():
@@ -176,9 +168,7 @@ def hapus_keranjang(item_id):
     flash("Item dihapus dari keranjang.", "info")
     return redirect(url_for("keranjang"))
 
-# ==========================================
-# PILIH METODE & COD & QRIS
-# ==========================================
+# ================= PILIH METODE & COD & QRIS =================
 @app.route("/pilih-bayar", methods=["POST"])
 def pilih_bayar():
     if not session.get("pembeli_nama"): return redirect(url_for("login_pembeli"))
@@ -262,9 +252,7 @@ def konfirmasi_qris():
     save_store()
     return redirect(url_for("struk_page"))
 
-# ==========================================
-# ✅ MIDTRANS (FIXED: Premature Stock/Cart Clear Removed)
-# ==========================================
+# ================= MIDTRANS (FIXED) =================
 @app.route("/bayar", methods=["GET", "POST"])
 def bayar():
     if not session.get("pembeli_nama"): return redirect(url_for("login_pembeli"))
@@ -314,21 +302,18 @@ def notifikasi_midtrans():
     if not data: return jsonify({"status": "ignored"}), 200
 
     oid = data.get("order_id", "")
-    sig = hashlib.sha512((oid + data.get("status_code", "") +
+    sig = hashlib.sha512((oid + str(data.get("status_code", "")) +
                           str(data.get("gross_amount", "")) + MIDTRANS_SERVER_KEY).encode()).hexdigest()
     
     if sig != data.get("signature_key", ""):
         return jsonify({"status": "invalid"}), 403
 
     status = data.get("transaction_status")
-    fraud = data.get("fraud_status")
-
-    # ✅ FIX: Hanya proses jika pembayaran BERHASIL (settlement/capture)
+    
+    # ✅ FIX: Hanya proses jika pembayaran BERHASIL
     if status in ['settlement', 'capture']:
-        # Kurangi stok & simpan order ke database
         raw_cart = session.get("keranjang", [])
         keranjang = restore_gambar(raw_cart)
-        
         for k in keranjang:
             b = item_by_id(k["id"])
             if b: b["stok"] = max(0, b.get("stok", 0) - k["jumlah"])
@@ -340,37 +325,26 @@ def notifikasi_midtrans():
             "tanggal": datetime.now().strftime("%d-%m-%Y %H:%M:%S")
         }
         add_order(order)
+        session["keranjang"] = [] # Kosongkan setelah sukses
+        session["struk"] = {**order, "bayar": float(data.get("gross_amount", 0)), "kembalian": 0}
         save_store()
-        print(f"✅ Webhook Midtrans: Order {oid} LUNAS. Stok dikurangi.")
+        print(f"✅ Webhook Midtrans: Order {oid} LUNAS.")
     elif status in ['cancel', 'deny', 'expire']:
-        print(f"⚠️ Webhook Midtrans: Order {oid} {status}. Stok & keranjang tetap aman.")
-    else:
-        print(f"ℹ️ Webhook Midtrans: Order {oid} status {status}. Menunggu aksi lanjut.")
-
+        print(f"⚠️ Webhook Midtrans: Order {oid} {status}. Stok & keranjang tetap.")
     return jsonify({"status": "ok"}), 200
 
 @app.route("/struk")
 def struk_page():
     struk = session.get("struk")
-    if not struk:
-        # Jika belum ada struk di session, cek apakah order_id ada di orders & lunas
-        oid = session.get("order_id")
-        paid_order = next((o for o in get_orders() if o.get("order_id") == oid and o.get("status") == "LUNAS"), None)
-        if paid_order:
-            session["struk"] = paid_order
-            session["keranjang"] = [] # ✅ Kosongkan keranjang HANYA setelah struk ditampilkan
-            return render_template("struk.html", struk=paid_order, pembeli=session.get("pembeli_nama"))
-        return redirect(url_for("index"))
+    if not struk: return redirect(url_for("index"))
     return render_template("struk.html", struk=struk, pembeli=session.get("pembeli_nama"))
 
-# ==========================================
-# ADMIN
-# ==========================================
+# ================= ADMIN =================
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
     if session.get("admin_logged_in"): return redirect(url_for("admin_dashboard"))
     if request.method == "POST":
-        if request.form.get("password", "") == ADMIN_PASSWORD:
+        if request.form.get("password", "").strip() == ADMIN_PASSWORD:
             session["admin_logged_in"] = True
             flash("Login admin berhasil! ✅", "success")
             return redirect(url_for("admin_dashboard"))
@@ -455,7 +429,6 @@ def admin_edit(item_id):
             flash("Nama tidak boleh kosong!", "error")
             return redirect(url_for("admin_edit", item_id=item_id))
         
-        # ✅ FIX: Jangan timpa gambar jika form kosong
         item["nama"] = nama
         item["harga"] = harga
         item["stok"] = stok
