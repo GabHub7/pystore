@@ -31,8 +31,8 @@ JSONBIN_URL     = "https://api.jsonbin.io/v3/b/" + JSONBIN_BIN_ID
 STORE = {
     "barang": [
         {"id": 1, "nama": "Indomie Goreng",      "harga": 3000, "gambar": "https://yoline.co.id/media/products/ProductIndomie_goreng_special_jumbo_129gr.png", "stok": 100},
-        {"id": 2, "nama": "Air Mineral 600ml",   "harga": 2000, "gambar": "https://images.tokopedia.net/img/cache/500-square/VqbcmM/2021/9/15/aqua-600ml.jpg",  "stok": 100},
-        {"id": 3, "nama": "Roti Tawar",          "harga": 7000, "gambar": "https://images.tokopedia.net/img/cache/500-square/VqbcmM/2020/8/12/roti-tawar.jpg",   "stok": 100},
+        {"id": 2, "nama": "Air Mineral 600ml",   "harga": 2000, "gambar": "https://down-id.img.susercontent.com/file/id-11134201-23030-gby2tljppfov1a",  "stok": 100},
+        {"id": 3, "nama": "Roti Tawar",          "harga": 7000, "gambar": "https://image.astronauts.cloud/product-images/2025/7/RotitawarJumboRevisi2_bbad0227-c7a3-4788-9628-5dd6144aeed6_900x900.jpg",   "stok": 100},
         {"id": 4, "nama": "Telur Ayam (1 butir)","harga": 1500, "gambar": "https://ichef.bbci.co.uk/ace/ws/800/cpsprodpb/16CE/production/_105483850_35a5b348-5c3f-45ca-94d7-4210aebc1a8e.jpg.webp", "stok": 100},
         {"id": 5, "nama": "Susu UHT Full Cream", "harga": 5000, "gambar": "https://www.jni.co.id/cdn/shop/products/b1d42094-90a1-42a2-bf81-b183d95a2243-fullcream-946ml.jpg?v=1738552499",        "stok": 100},
     ],
