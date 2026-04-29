@@ -1,111 +1,172 @@
 {% extends "base.html" %}
 {% block title %}PYSTORE – Keranjang{% endblock %}
+{% block head %}
+<style>
+  .cart-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media(max-width:768px) {
+    .cart-layout { grid-template-columns:1fr; }
+  }
+  .cart-item {
+    display:flex; align-items:center; gap:1rem;
+    padding:1rem 0; border-bottom:1px solid var(--border);
+  }
+  .cart-item:last-child { border-bottom:none; }
+  .cart-item-img {
+    width:64px; height:64px; border-radius:10px;
+    overflow:hidden; background:var(--surface2); flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .cart-item-img img { width:100%; height:100%; object-fit:cover; }
+  .cart-item-name { font-weight:700; font-size:0.95rem; }
+  .cart-item-price { color:var(--text2); font-size:0.85rem; margin-top:2px; }
+  .cart-item-sub { color:var(--accent); font-weight:700; font-size:1rem; margin-left:auto; flex-shrink:0; }
+
+  /* Payment method cards */
+  .metode-option {
+    display:flex; align-items:center; gap:0.85rem;
+    padding:0.9rem 1rem;
+    background:var(--surface2); border:2px solid var(--border);
+    border-radius:12px; cursor:pointer;
+    transition:border-color .18s, background .18s;
+    margin-bottom:0.6rem;
+  }
+  .metode-option:last-child { margin-bottom:0; }
+  .metode-option.active {
+    border-color:var(--accent);
+    background:var(--accent-dim);
+  }
+  .metode-option input[type=radio] { accent-color:var(--accent); width:17px; height:17px; flex-shrink:0; }
+  .metode-title { font-weight:700; font-size:0.9rem; margin-bottom:2px; }
+  .metode-desc  { font-size:0.75rem; color:var(--text2); }
+
+  .summary-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:0.5rem 0;
+  }
+  .summary-row + .summary-row { border-top:1px solid var(--border); }
+  .summary-total { font-size:1.5rem; font-weight:800; color:var(--accent); font-family:'Fraunces',serif; }
+</style>
+{% endblock %}
 {% block content %}
+
 <div class="page-header">
-  <h1>🧺 Keranjang <span class="text-accent">Belanja</span></h1>
-  <p>Halo, <strong>{{ pembeli }}</strong>!</p>
+  <h1>Keranjang <span class="accent">Belanja</span></h1>
+  <p>Halo, <strong>{{ pembeli }}</strong>! Periksa pesananmu sebelum checkout.</p>
 </div>
+
 {% if not keranjang %}
-  <div class="card" style="text-align:center;padding:3rem;">
-    <p style="font-size:3rem;">🛒</p>
-    <h3>Keranjang Kosong</h3>
-    <a href="/" class="btn btn-primary" style="margin-top:1.2rem;">Ke Toko</a>
+  <div class="card" style="text-align:center;padding:4rem 2rem;">
+    <div style="font-size:3.5rem;margin-bottom:1rem;">🛒</div>
+    <h3>Keranjang Masih Kosong</h3>
+    <p class="text-muted" style="margin-top:0.4rem;">Yuk tambahkan produk favoritmu!</p>
+    <a href="/" class="btn btn-primary" style="margin-top:1.5rem;">Lihat Produk</a>
   </div>
+
 {% else %}
   {% set total = keranjang | sum(attribute='subtotal') %}
-  <div class="card" style="margin-bottom:1.5rem;">
-    <table>
-      <thead><tr><th>Nama Barang</th><th>Harga</th><th>Qty</th><th>Subtotal</th><th>Aksi</th></tr></thead>
-      <tbody>
-        {% for item in keranjang %}
-        <tr>
-          <td>
-            <div style="display:flex;align-items:center;gap:0.75rem;">
-              {% if item.gambar %}
+  <div class="cart-layout">
+
+    {# ── KOLOM KIRI: item list ── #}
+    <div class="card" style="padding:0 1.5rem;">
+      {% for item in keranjang %}
+        <div class="cart-item">
+          <div class="cart-item-img">
+            {% if item.gambar %}
               <img src="{{ item.gambar }}" alt="{{ item.nama }}"
-                style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"
-                onerror="this.style.display='none'">
-              {% endif %}
-              <strong>{{ item.nama }}</strong>
-            </div>
-          </td>
-          <td class="text-muted">Rp{{ "{:,}".format(item.harga) }}</td>
-          <td>x{{ item.jumlah }}</td>
-          <td class="text-accent" style="font-weight:700;">Rp{{ "{:,}".format(item.subtotal) }}</td>
-          <td><a href="/hapus-keranjang/{{ item.id }}" class="btn btn-danger btn-sm">Hapus</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+                   onerror="this.style.display='none'">
+            {% else %}
+              <span style="font-size:1.5rem;">🛍️</span>
+            {% endif %}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <p class="cart-item-name">{{ item.nama }}</p>
+            <p class="cart-item-price">Rp{{ "{:,}".format(item.harga) }} × {{ item.jumlah }}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;flex-shrink:0;">
+            <span class="cart-item-sub">Rp{{ "{:,}".format(item.subtotal) }}</span>
+            <a href="/hapus-keranjang/{{ item.id }}" class="btn btn-danger btn-sm">Hapus</a>
+          </div>
+        </div>
+      {% endfor %}
 
-  <div class="card" style="max-width:520px;margin-left:auto;">
-    <h3 style="margin-bottom:1rem;">Ringkasan & Pilih Pembayaran</h3>
-    <div style="display:flex;justify-content:space-between;margin-bottom:1rem;">
-      <span class="text-muted">Total Belanja</span>
-      <strong class="text-accent" style="font-size:1.3rem;">Rp{{ "{:,}".format(total) }}</strong>
+      <div style="padding:1rem 0;">
+        <a href="/" class="btn btn-outline btn-sm">+ Tambah Produk Lagi</a>
+      </div>
     </div>
-    <hr style="border-color:var(--border);margin-bottom:1rem;">
 
-    <form method="POST" action="/pilih-bayar">
-      <div class="form-group">
-        <label>Metode Pembayaran</label>
-        <div style="display:flex;flex-direction:column;gap:0.6rem;margin-top:0.5rem;" id="metode-list">
+    {# ── KOLOM KANAN: ringkasan & pembayaran ── #}
+    <div style="position:sticky;top:76px;">
+      <div class="card">
+        <h3 style="margin-bottom:1.25rem;">Ringkasan & Pembayaran</h3>
 
-          <!-- Online -->
-          <label class="metode-card active" id="lbl-midtrans" onclick="pilihMetode('midtrans')"
-            style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--surface2);border:2px solid var(--accent);border-radius:10px;cursor:pointer;">
-            <input type="radio" name="metode" value="midtrans" checked style="accent-color:var(--accent);width:18px;height:18px;">
+        {# Total #}
+        <div class="summary-row">
+          <span class="text-muted">Subtotal ({{ keranjang|length }} item)</span>
+          <span class="summary-total">Rp{{ "{:,}".format(total) }}</span>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0;">
+
+        {# Metode pembayaran #}
+        <form method="POST" action="/pilih-bayar" id="form-bayar">
+          <p style="font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;
+                    letter-spacing:.07em;margin-bottom:0.75rem;">Metode Pembayaran</p>
+
+          <label class="metode-option active" id="lbl-midtrans" onclick="pilih('midtrans')">
+            <input type="radio" name="metode" value="midtrans" checked>
             <div>
-              <p style="font-weight:700;margin:0;">💳 Bayar Online</p>
-              <p class="text-muted" style="font-size:0.78rem;margin:0;">GoPay, DANA, OVO, ShopeePay, QRIS dinamis, Transfer Bank</p>
+              <p class="metode-title">💳 Bayar Online</p>
+              <p class="metode-desc">GoPay, DANA, OVO, Transfer Bank, QRIS Dinamis</p>
             </div>
           </label>
 
-          <!-- QRIS statis -->
           {% if qris_tersedia %}
-          <label class="metode-card" id="lbl-qris" onclick="pilihMetode('qris')"
-            style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;">
-            <input type="radio" name="metode" value="qris" style="accent-color:var(--accent);width:18px;height:18px;">
+          <label class="metode-option" id="lbl-qris" onclick="pilih('qris')">
+            <input type="radio" name="metode" value="qris">
             <div>
-              <p style="font-weight:700;margin:0;">📷 QRIS (Scan QR)</p>
-              <p class="text-muted" style="font-size:0.78rem;margin:0;">Scan QR lalu konfirmasi pembayaran</p>
+              <p class="metode-title">📷 QRIS Statis</p>
+              <p class="metode-desc">Scan QR code lalu konfirmasi ke admin</p>
             </div>
           </label>
           {% endif %}
 
-          <!-- COD -->
-          <label class="metode-card" id="lbl-cod" onclick="pilihMetode('cod')"
-            style="display:flex;align-items:center;gap:0.75rem;padding:0.85rem 1rem;background:var(--surface2);border:2px solid var(--border);border-radius:10px;cursor:pointer;">
-            <input type="radio" name="metode" value="cod" style="accent-color:var(--accent);width:18px;height:18px;">
+          <label class="metode-option" id="lbl-cod" onclick="pilih('cod')">
+            <input type="radio" name="metode" value="cod">
             <div>
-              <p style="font-weight:700;margin:0;">🚚 COD (Bayar di Tempat)</p>
-              <p class="text-muted" style="font-size:0.78rem;margin:0;">Bayar tunai saat barang diterima</p>
+              <p class="metode-title">🚚 COD (Bayar di Tempat)</p>
+              <p class="metode-desc">Bayar tunai saat barang diterima</p>
             </div>
           </label>
 
-        </div>
+          <button type="submit" id="btn-checkout" class="btn btn-primary btn-full btn-lg" style="margin-top:1rem;">
+            💳 Lanjut Bayar Online
+          </button>
+        </form>
       </div>
-      <button type="submit" id="btn-lanjut" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.8rem;">
-        💳 Lanjut Bayar Online
-      </button>
-    </form>
-    <a href="/" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:0.7rem;">+ Tambah Produk</a>
+    </div>
+
   </div>
 {% endif %}
 
 <script>
-var labels = { midtrans: 'lbl-midtrans', qris: 'lbl-qris', cod: 'lbl-cod' };
-var btnText = { midtrans: '💳 Lanjut Bayar Online', qris: '📷 Lanjut Bayar QRIS', cod: '🚚 Lanjut COD' };
-function pilihMetode(m) {
+var labels = {
+  midtrans: { el:'lbl-midtrans', text:'💳 Lanjut Bayar Online' },
+  qris:     { el:'lbl-qris',     text:'📷 Lanjut Bayar QRIS' },
+  cod:      { el:'lbl-cod',      text:'🚚 Lanjut Order COD' }
+};
+function pilih(m) {
   Object.keys(labels).forEach(function(k) {
-    var el = document.getElementById(labels[k]);
+    var el = document.getElementById(labels[k].el);
     if (!el) return;
-    el.style.borderColor = k === m ? 'var(--accent)' : 'var(--border)';
-    var radio = el.querySelector('input[type=radio]');
-    if (radio) radio.checked = k === m;
+    el.classList.toggle('active', k === m);
+    el.querySelector('input').checked = k === m;
   });
-  document.getElementById('btn-lanjut').innerHTML = btnText[m] || '→ Lanjut';
+  if (labels[m]) document.getElementById('btn-checkout').innerHTML = labels[m].text;
 }
 </script>
 {% endblock %}
