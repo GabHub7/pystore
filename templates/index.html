@@ -1,212 +1,78 @@
-{% extends "base.html" %}
-{% block title %}PYSTORE – Toko{% endblock %}
-{% block head %}
-<style>
-  /* Hero banner */
-  .hero {
-    background: linear-gradient(135deg, var(--surface2) 0%, #1a1208 100%);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 3rem 2.5rem;
-    margin-bottom: 2.5rem;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::before {
-    content:'';
-    position:absolute; inset:0;
-    background: radial-gradient(ellipse at 80% 50%, rgba(245,158,11,.12) 0%, transparent 65%);
-    pointer-events:none;
-  }
-  .hero-eyebrow {
-    font-size:0.75rem; font-weight:700; letter-spacing:0.12em;
-    text-transform:uppercase; color:var(--accent); margin-bottom:0.75rem;
-  }
-  .hero h1 { font-size:2.6rem; margin-bottom:0.75rem; }
-  .hero p { color:var(--text2); max-width:480px; margin-bottom:1.75rem; }
-
-  /* Produk grid */
-  .products-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1.25rem;
-  }
-
-  /* Produk card */
-  .product-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-    position: relative;
-  }
-  .product-card:hover {
-    border-color: var(--border2);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.5);
-  }
-  .product-img-wrap {
-    width: 100%;
-    aspect-ratio: 1/1;
-    overflow: hidden;
-    background: var(--surface2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-  }
-  .product-img-wrap img {
-    width:100%; height:100%; object-fit:cover;
-    transition: transform 0.35s ease;
-  }
-  .product-card:hover .product-img-wrap img { transform:scale(1.06); }
-  .stock-pill {
-    position:absolute; top:10px; right:10px;
-    font-size:0.68rem; font-weight:700;
-    padding:3px 9px; border-radius:20px;
-    backdrop-filter:blur(8px);
-  }
-  .stock-habis {
-    background:rgba(239,68,68,.85); color:#fff;
-  }
-  .stock-low {
-    background:rgba(245,158,11,.85); color:#000;
-  }
-  .product-body {
-    padding: 1.1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.7rem;
-    flex: 1;
-  }
-  .product-name { font-weight:700; font-size:0.95rem; line-height:1.3; }
-  .product-price { font-size:1.3rem; font-weight:800; color:var(--accent); font-family:'Fraunces',serif; }
-  .product-stock { font-size:0.75rem; color:var(--text3); }
-  .product-stock.low  { color:#fcd34d; }
-  .product-stock.danger { color:#fca5a5; }
-
-  /* CTA (beli / login) */
-  .product-actions { display:flex; flex-direction:column; gap:0.5rem; margin-top:auto; }
-
-  /* Login CTA banner bawah */
-  .login-cta {
-    background: linear-gradient(135deg, var(--surface2), #141008);
-    border:1px solid rgba(245,158,11,.2);
-    border-radius:16px;
-    padding:1.5rem 2rem;
-    display:flex; align-items:center; justify-content:space-between;
-    flex-wrap:wrap; gap:1rem;
-    margin-top:2.5rem;
-  }
-
-  /* Empty state */
-  .empty-state {
-    text-align:center; padding:4rem 2rem;
-  }
-  .empty-icon { font-size:3.5rem; margin-bottom:1rem; }
-</style>
-{% endblock %}
-{% block content %}
-
-{# ── HERO ── #}
-<div class="hero">
-  <p class="hero-eyebrow">✦ Belanja Mudah & Cepat</p>
-  <h1>Selamat Datang di<br><span class="accent">PYSTORE</span></h1>
-  <p>Temukan produk kebutuhan sehari-hari dengan harga terbaik. Pesan sekarang, bayar dengan berbagai metode pembayaran.</p>
-  {% if not pembeli %}
-    <a href="/login-pembeli" class="btn btn-primary btn-lg">Mulai Belanja →</a>
-  {% else %}
-    <p style="color:var(--accent);font-weight:700;">Halo, {{ pembeli }}! Selamat berbelanja 🛍️</p>
-  {% endif %}
-</div>
-
-{# ── SECTION HEADER ── #}
-<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:0.75rem;">
-  <div>
-    <h2 style="font-size:1.25rem;">Daftar Produk</h2>
-    <p style="color:var(--text2);font-size:0.875rem;margin-top:2px;">{{ barang|length }} produk tersedia</p>
-  </div>
-</div>
-
-{# ── PRODUK GRID ── #}
-{% if not barang %}
-  <div class="empty-state card">
-    <div class="empty-icon">📦</div>
-    <h3>Toko Masih Kosong</h3>
-    <p class="text-muted" style="margin-top:0.5rem;">Produk belum tersedia. Hubungi admin.</p>
-  </div>
-{% else %}
-  <div class="products-grid">
-    {% for b in barang %}
-    <div class="product-card">
-
-      {# Gambar #}
-      <div class="product-img-wrap">
-        {% if b.gambar %}
-          <img src="{{ b.gambar }}" alt="{{ b.nama }}"
-               onerror="this.parentElement.innerHTML='<span style=font-size:3rem>🛍️</span>'">
-        {% else %}
-          <span style="font-size:3rem;">🛍️</span>
-        {% endif %}
-
-        {# Stock pill #}
-        {% if b.stok is defined %}
-          {% if b.stok <= 0 %}
-            <span class="stock-pill stock-habis">Habis</span>
-          {% elif b.stok <= 5 %}
-            <span class="stock-pill stock-low">Sisa {{ b.stok }}</span>
-          {% endif %}
-        {% endif %}
-      </div>
-
-      {# Body #}
-      <div class="product-body">
-        <p class="product-name">{{ b.nama }}</p>
-        <p class="product-price">Rp{{ "{:,}".format(b.harga) }}</p>
-        {% if b.stok is defined %}
-          <p class="product-stock {% if b.stok <= 0 %}danger{% elif b.stok <= 10 %}low{% endif %}">
-            Stok: {{ b.stok }}
-          </p>
-        {% endif %}
-
-        <div class="product-actions">
-          {% if b.stok is defined and b.stok <= 0 %}
-            <div class="btn btn-outline" style="cursor:not-allowed;opacity:0.45;">❌ Stok Habis</div>
-          {% elif pembeli %}
-            <form method="POST" action="/tambah-keranjang">
-              <input type="hidden" name="id_barang" value="{{ b.id }}">
-              <div class="qty-row" style="margin-bottom:0.5rem;">
-                <label style="margin:0;white-space:nowrap;font-size:0.75rem;">Qty:</label>
-                <input type="number" name="qty" value="1" min="1"
-                       max="{{ b.stok if b.stok is defined else 99 }}"
-                       style="font-size:0.9rem;">
-              </div>
-              <button type="submit" class="btn btn-primary btn-full">+ Keranjang</button>
-            </form>
-          {% else %}
-            <a href="/login-pembeli" class="btn btn-outline btn-full">🔒 Login untuk Beli</a>
-          {% endif %}
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pystore - Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="flex">
+    <aside class="w-64 h-screen sticky top-0 bg-[var(--bg-sidebar)] border-r border-[var(--border)] p-6">
+        <div class="text-2xl font-bold text-[var(--accent)] mb-10 flex items-center gap-2">
+            <span class="w-8 h-8 bg-[var(--accent)] rounded-lg"></span> Pystore
         </div>
-      </div>
-    </div>
-    {% endfor %}
-  </div>
-{% endif %}
+        <nav class="space-y-4">
+            <div class="sidebar-item active p-3 cursor-pointer">Dashboard</div>
+            <div class="sidebar-item p-3 cursor-pointer text-[var(--text-muted)]">Produk</div>
+            <div class="sidebar-item p-3 cursor-pointer text-[var(--text-muted)]">Pesanan</div>
+            <div class="sidebar-item p-3 cursor-pointer text-[var(--text-muted)]">Laporan</div>
+            <div class="sidebar-item p-3 cursor-pointer text-[var(--text-muted)] mt-10" onclick="toggleTheme()">Ganti Tema</div>
+        </nav>
+    </aside>
 
-{# ── LOGIN CTA bawah ── #}
-{% if not pembeli %}
-  <div class="login-cta">
-    <div>
-      <h3>Belum masuk?</h3>
-      <p class="text-muted" style="margin-top:0.25rem;font-size:0.9rem;">
-        Login sebagai pembeli untuk mulai berbelanja dan checkout.
-      </p>
-    </div>
-    <a href="/login-pembeli" class="btn btn-primary">Masuk sebagai Pembeli →</a>
-  </div>
-{% endif %}
+    <main class="flex-1 p-8">
+        <header class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold">Dashboard</h1>
+            <div class="flex items-center gap-4">
+                <span class="text-[var(--text-muted)]">Admin Pystore</span>
+                <img src="https://ui-avatars.com/api/?name=Admin" class="w-10 h-10 rounded-full border-2 border-[var(--accent)]">
+            </div>
+        </header>
 
-{% endblock %}
+        <div class="grid grid-cols-3 gap-6 mb-8">
+            <div class="card">
+                <p class="text-[var(--text-muted)] mb-2">Total Penjualan</p>
+                <h2 class="text-3xl font-bold text-[var(--accent)]">Rp 33.375.000</h2>
+            </div>
+            <div class="card">
+                <p class="text-[var(--text-muted)] mb-2">Pesanan Baru</p>
+                <h2 class="text-3xl font-bold">13</h2>
+            </div>
+            <div class="card">
+                <p class="text-[var(--text-muted)] mb-2">Pelanggan</p>
+                <h2 class="text-3xl font-bold">32</h2>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold">Daftar Pesanan Terbaru</h3>
+                <input type="text" placeholder="Cari..." class="bg-[var(--input-bg)] border border-[var(--border)] rounded-lg px-4 py-1 text-sm">
+            </div>
+            <table class="w-full text-left">
+                <thead class="text-[var(--text-muted)] border-b border-[var(--border)] text-sm">
+                    <tr>
+                        <th class="py-3">Order ID</th>
+                        <th>Pelanggan</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="text-sm">
+                    <tr class="border-b border-[var(--border)]">
+                        <td class="py-4">#880224</td>
+                        <td>Dimas Pratama</td>
+                        <td>Rp 250.000</td>
+                        <td><span class="bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-xs">Selesai</span></td>
+                        <td><button class="text-[var(--accent)]">Lihat</button></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script src="assets/js/theme.js"></script>
+</body>
+</html>
