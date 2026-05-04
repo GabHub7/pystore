@@ -1,8 +1,13 @@
+# app.py - Pystore Optimized Version
+# ✅ Cache per-request, batch lookup, lazy loading ready, performance logging
+
 import os
 import hashlib
 import base64
 import requests
 import secrets
+import time
+import threading
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from datetime import datetime
 
@@ -10,7 +15,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'))
 
 # ===================== CONFIG =====================
-# FIX #4: Secret key dari env, fallback random aman (bukan hardcoded string)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
 
 DEFAULT_IMG = "https://placehold.co/400x300?text=No+Image"
@@ -22,12 +26,11 @@ MIDTRANS_SNAP_URL   = "https://app.sandbox.midtrans.com/snap/snap.js"
 MIDTRANS_API_URL    = "https://app.sandbox.midtrans.com/snap/v1/transactions"
 
 # JSONBin Config
-# NOTE: Untuk produksi, set env var JSONBIN_BIN_ID & JSONBIN_API_KEY di Vercel dashboard
 JSONBIN_BIN_ID  = os.environ.get("JSONBIN_BIN_ID",  "69cc62dfaaba882197b1ce2d")
 JSONBIN_API_KEY = os.environ.get("JSONBIN_API_KEY",  "$2a$10$ZM2UievsWh.L.67pqGxzqOLfou5wub3IHXNeEwj9Q1X4KpxPRYlte")
 JSONBIN_URL     = "https://api.jsonbin.io/v3/b/" + JSONBIN_BIN_ID
 
-# FIX #5: Hapus DEFAULT_STORE yang duplikat — cukup satu STORE sebagai fallback lokal
+# Fallback STORE (hanya jika JSONBin down)
 STORE = {
     "barang": [
         {"id": 1, "nama": "Indomie Goreng",      "harga": 3000, "gambar": "https://yoline.co.id/media/products/ProductIndomie_goreng_special_jumbo_129gr.png", "stok": 100},
@@ -39,54 +42,75 @@ STORE = {
     "next_id": 6,
     "orders": [],
     "qris_url": "",
-    "pending_orders": {}  # FIX #1: simpan pending order Midtrans antar-request
+    "pending_orders": {}
 }
 
-# FIX #6: Admin password di-hash SHA256, bisa di-override via env var
+# Admin password hash
 _ADMIN_PW_DEFAULT   = hashlib.sha256("admin1234".encode()).hexdigest()
 ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", _ADMIN_PW_DEFAULT)
 
-# ===================== JSONBIN HELPERS =====================
+# ===================== CACHE HELPER (NEW!) =====================
+_request_cache = {}
+_cache_lock = threading.Lock()
+
+def get_cached_data(key, fetch_func, ttl_seconds=20):
+    """Cache helper dengan TTL sederhana untuk hindari HTTP request berulang."""
+    now = time.time()
+    with _cache_lock:
+        entry = _request_cache.get(key)
+        if entry and (now - entry['time']) < ttl_seconds:
+            return entry['data']
+    data = fetch_func()
+    with _cache_lock:
+        _request_cache[key] = {'data': data, 'time': now}
+    return data
+
+def clear_cache():
+    """Panggil setelah write ke JSONBin agar cache tidak stale."""
+    global _request_cache
+    with _cache_lock:
+        _request_cache.clear()
+
+# ===================== JSONBIN HELPERS (OPTIMIZED) =====================
 def jsonbin_get():
-    """Ambil data dari JSONBin. Fallback ke STORE lokal kalau gagal."""
-    try:
-        resp = requests.get(
-            JSONBIN_URL + "/latest",
-            headers={"X-Master-Key": JSONBIN_API_KEY},
-            timeout=5
-        )
-        if resp.status_code == 200:
-            data = resp.json().get("record", {})
-            if not data or not data.get("barang"):
-                return dict(STORE)
-            # Backward-compat: pastikan key baru ada
-            data.setdefault("pending_orders", {})
-            data.setdefault("qris_url", "")
-            data.setdefault("orders", [])
-            return data
-    except Exception as e:
-        print(f"Error load JSONBin: {e}")
-    return dict(STORE)
+    """Ambil data dari JSONBin dengan caching per-request."""
+    cache_key = "jsonbin_main"
+    
+    def _fetch():
+        try:
+            resp = requests.get(
+                JSONBIN_URL + "/latest",
+                headers={"X-Master-Key": JSONBIN_API_KEY},
+                timeout=5
+            )
+            if resp.status_code == 200:
+                data = resp.json().get("record", {})
+                if not data or not data.get("barang"):
+                    return dict(STORE)
+                data.setdefault("pending_orders", {})
+                data.setdefault("qris_url", "")
+                data.setdefault("orders", [])
+                return data
+        except Exception as e:
+            print(f"⚠️ Error load JSONBin: {e}")
+        return dict(STORE)
+    
+    return get_cached_data(cache_key, _fetch, ttl_seconds=20)
 
 def jsonbin_set(data):
-    """Simpan data ke JSONBin."""
+    """Simpan data ke JSONBin + clear cache."""
     try:
         requests.put(
             JSONBIN_URL,
             json=data,
-            headers={
-                "X-Master-Key": JSONBIN_API_KEY,
-                "Content-Type": "application/json"
-            },
+            headers={"X-Master-Key": JSONBIN_API_KEY, "Content-Type": "application/json"},
             timeout=5
         )
+        clear_cache()  # ← Penting: clear cache setelah write!
     except Exception as e:
-        print(f"Error save JSONBin: {e}")
+        print(f"⚠️ Error save JSONBin: {e}")
 
-# ===================== DATA HELPERS =====================
-# FIX #2: Semua operasi data penting lewat JSONBin (bukan STORE in-memory)
-#         supaya data persisten di Vercel serverless
-
+# ===================== DATA HELPERS (OPTIMIZED) =====================
 def get_barang():
     return jsonbin_get().get("barang", [])
 
@@ -96,8 +120,6 @@ def get_orders():
 def get_qris():
     return jsonbin_get().get("qris_url", "")
 
-# FIX #3: set_qris dulu fetch dulu, update field qris_url saja, baru save.
-#         Bug lama: jsonbin_set({"qris_url": url}) — hapus semua data lain!
 def set_qris(url):
     data = jsonbin_get()
     data["qris_url"] = url
@@ -108,28 +130,35 @@ def add_order(order):
     data.setdefault("orders", []).append(order)
     jsonbin_set(data)
 
-def item_by_id(iid):
+def item_by_id(iid, products_dict=None):
+    """Lookup O(1) jika products_dict disediakan, fallback ke linear search."""
+    if products_dict is not None:
+        return products_dict.get(iid)
     return next((b for b in get_barang() if b.get("id") == iid), None)
 
-def kurangi_stok(keranjang_items):
-    """Kurangi stok di JSONBin untuk semua item yang dibeli."""
+def kurangi_stok_batch(keranjang_items):
+    """Kurangi stok dengan 1x fetch + 1x write ke JSONBin (batch update)."""
     data = jsonbin_get()
+    products = {b['id']: b for b in data.get("barang", [])}
+    
+    updated = False
     for k in keranjang_items:
-        for b in data.get("barang", []):
-            if b.get("id") == k["id"]:
-                b["stok"] = max(0, b.get("stok", 0) - k["jumlah"])
-    jsonbin_set(data)
+        if k["id"] in products:
+            old_stok = products[k["id"]].get("stok", 0)
+            products[k["id"]]["stok"] = max(0, old_stok - k["jumlah"])
+            updated = True
+    
+    if updated:
+        data["barang"] = list(products.values())
+        jsonbin_set(data)  # ← Sudah ada clear_cache() di dalam jsonbin_set
 
 def get_next_id():
-    """Ambil next_id dari JSONBin lalu increment."""
     data = jsonbin_get()
     nid  = data.get("next_id", 6)
     data["next_id"] = nid + 1
     jsonbin_set(data)
     return nid
 
-# FIX #1: Pending order Midtrans disimpan di JSONBin bukan session
-#         Webhook Midtrans tidak punya session pembeli!
 def save_pending_order(order_id, keranjang, pelanggan):
     data = jsonbin_get()
     data.setdefault("pending_orders", {})[order_id] = {
@@ -147,19 +176,23 @@ def pop_pending_order(order_id):
         jsonbin_set(data)
     return result
 
-# ===================== SESSION / GAMBAR HELPERS =====================
+# ===================== SESSION / GAMBAR HELPERS (OPTIMIZED) =====================
 def safe_gambar(gambar, item_id):
-    if gambar and gambar.startswith("data:"):
+    if gambar and gambar.startswith(""):
         return "b64" + str(item_id)
     return gambar
 
-def restore_gambar(keranjang):
+def restore_gambar_batch(keranjang, products_dict=None):
+    """Restore gambar dengan lookup O(1), bukan N HTTP requests."""
+    if products_dict is None:
+        products_dict = {b['id']: b for b in get_barang()}
+    
     result = []
     for k in keranjang:
         item = dict(k)
         if str(item.get("gambar", "")).startswith("b64"):
-            b = item_by_id(item["id"])
-            item["gambar"] = b.get("gambar", "") if b else ""
+            b = products_dict.get(item["id"])
+            item["gambar"] = b.get("gambar", "") if b else DEFAULT_IMG
         result.append(item)
     return result
 
@@ -167,10 +200,24 @@ def produk_for_order(keranjang):
     return [{"id": k["id"], "nama": k["nama"], "harga": k["harga"],
              "jumlah": k["jumlah"], "subtotal": k["subtotal"]} for k in keranjang]
 
+# ===================== PERFORMANCE LOGGING (NEW!) =====================
+@app.before_request
+def before_request():
+    request.start_time = time.time()
+
+@app.after_request
+def after_request(response):
+    if hasattr(request, 'start_time'):
+        duration = time.time() - request.start_time
+        if duration > 1.0:
+            print(f"⚠️ Slow request: {request.path} — {duration:.2f}s")
+    return response
+
 # ===================== PUBLIC =====================
 @app.route("/")
 def index():
-    return render_template("index.html", barang=get_barang(),
+    products = get_barang()
+    return render_template("index.html", barang=products,
                            pembeli=session.get("pembeli_nama"), default_img=DEFAULT_IMG)
 
 @app.route("/login-pembeli", methods=["GET", "POST"])
@@ -193,17 +240,31 @@ def logout_pembeli():
     flash("Berhasil keluar.", "info")
     return redirect(url_for("index"))
 
-# ===================== KERANJANG =====================
+# ===================== KERANJANG (OPTIMIZED!) =====================
 @app.route("/keranjang")
 def keranjang():
     if not session.get("pembeli_nama"):
         flash("Silakan masuk sebagai pembeli terlebih dahulu.", "warning")
         return redirect(url_for("login_pembeli"))
-    restored = restore_gambar(session.get("keranjang", []))
-    qris     = get_qris()
-    return render_template("keranjang.html", keranjang=restored,
-                           pembeli=session["pembeli_nama"], default_img=DEFAULT_IMG,
-                           qris_tersedia=bool(qris))
+    
+    # ✅ Fetch produk SEKALI, konversi ke dict untuk O(1) lookup
+    products_list = get_barang()
+    products_dict = {b['id']: b for b in products_list}
+    
+    # ✅ Batch restore gambar
+    raw_cart = session.get("keranjang", [])
+    restored = restore_gambar_batch(raw_cart, products_dict)
+    
+    # ✅ Hitung total di backend (bukan di Jinja)
+    total = sum(item['subtotal'] for item in restored)
+    
+    qris = get_qris()
+    return render_template("keranjang.html", 
+                          keranjang=restored,
+                          pembeli=session["pembeli_nama"], 
+                          default_img=DEFAULT_IMG,
+                          qris_tersedia=bool(qris),
+                          total=total)  # ← Kirim total ke template
 
 @app.route("/tambah-keranjang", methods=["POST"])
 def tambah_keranjang():
@@ -220,7 +281,10 @@ def tambah_keranjang():
         flash("Input tidak valid.", "error")
         return redirect(url_for("index"))
 
-    b = item_by_id(id_beli)
+    # ✅ Fetch produk SEKALI untuk lookup
+    products = {b['id']: b for b in get_barang()}
+    b = products.get(id_beli)
+    
     if not b:
         flash("Barang tidak ditemukan.", "error")
         return redirect(url_for("index"))
@@ -266,7 +330,7 @@ def pilih_bayar():
     if metode == "qris": return redirect(url_for("bayar_qris"))
     return redirect(url_for("bayar"))
 
-# ===================== COD =====================
+# ===================== COD (OPTIMIZED) =====================
 @app.route("/cod", methods=["GET", "POST"])
 def form_cod():
     if not session.get("pembeli_nama"):
@@ -275,7 +339,10 @@ def form_cod():
     if not raw:
         flash("Keranjang kosong!", "error")
         return redirect(url_for("keranjang"))
-    keranjang = restore_gambar(raw)
+    
+    # ✅ Batch restore
+    products_dict = {b['id']: b for b in get_barang()}
+    keranjang = restore_gambar_batch(raw, products_dict)
 
     if request.method == "POST":
         nama    = request.form.get("nama",    "").strip()
@@ -289,8 +356,8 @@ def form_cod():
         total    = sum(k["subtotal"] for k in keranjang)
         order_id = "COD-" + datetime.now().strftime("%Y%m%d%H%M%S") + "-" + session["pembeli_nama"].replace(" ", "")[:8]
 
-        # FIX #2 + #6: kurangi stok via JSONBin, bukan in-memory STORE
-        kurangi_stok(keranjang)
+        # ✅ Batch stok update
+        kurangi_stok_batch(keranjang)
 
         order = {
             "order_id": order_id, "pelanggan": session["pembeli_nama"],
@@ -306,7 +373,7 @@ def form_cod():
     total = sum(k["subtotal"] for k in keranjang)
     return render_template("cod.html", keranjang=keranjang, total=total, pembeli=session["pembeli_nama"])
 
-# ===================== QRIS =====================
+# ===================== QRIS (OPTIMIZED) =====================
 @app.route("/bayar-qris")
 def bayar_qris():
     if not session.get("pembeli_nama"):
@@ -319,7 +386,9 @@ def bayar_qris():
     if not qris:
         flash("QRIS belum tersedia. Pilih metode lain.", "warning")
         return redirect(url_for("keranjang"))
-    keranjang = restore_gambar(raw)
+    
+    products_dict = {b['id']: b for b in get_barang()}
+    keranjang = restore_gambar_batch(raw, products_dict)
     total     = sum(k["subtotal"] for k in keranjang)
     order_id  = "QRIS-" + datetime.now().strftime("%Y%m%d%H%M%S") + "-" + session["pembeli_nama"].replace(" ", "")[:8]
     session["order_id"]    = order_id
@@ -332,12 +401,13 @@ def konfirmasi_qris():
     if not session.get("pembeli_nama"):
         return redirect(url_for("login_pembeli"))
     raw       = session.get("keranjang", [])
-    keranjang = restore_gambar(raw)
+    products_dict = {b['id']: b for b in get_barang()}
+    keranjang = restore_gambar_batch(raw, products_dict)
     total     = session.get("order_total", sum(k["subtotal"] for k in keranjang))
     order_id  = session.get("order_id", "QRIS-" + datetime.now().strftime("%Y%m%d%H%M%S"))
 
-    # FIX #2: kurangi stok via JSONBin (persisten)
-    kurangi_stok(keranjang)
+    # ✅ Batch stok update
+    kurangi_stok_batch(keranjang)
 
     order = {
         "order_id": order_id, "pelanggan": session["pembeli_nama"],
@@ -349,7 +419,7 @@ def konfirmasi_qris():
     session["keranjang"] = []
     return redirect(url_for("struk_page"))
 
-# ===================== MIDTRANS =====================
+# ===================== MIDTRANS (OPTIMIZED) =====================
 @app.route("/bayar", methods=["GET", "POST"])
 def bayar():
     if not session.get("pembeli_nama"):
@@ -358,7 +428,9 @@ def bayar():
     if not raw:
         flash("Keranjang kosong!", "error")
         return redirect(url_for("keranjang"))
-    keranjang = restore_gambar(raw)
+    
+    products_dict = {b['id']: b for b in get_barang()}
+    keranjang = restore_gambar_batch(raw, products_dict)
     total     = sum(k["subtotal"] for k in keranjang)
     order_id  = "PYSTORE-" + datetime.now().strftime("%Y%m%d%H%M%S") + "-" + session["pembeli_nama"].replace(" ", "")[:8]
     session["order_id"]    = order_id
@@ -383,8 +455,6 @@ def bayar():
             "Authorization": "Basic " + auth}, timeout=15)
         result = resp.json()
         if "token" in result:
-            # FIX #1: Simpan pending order ke JSONBin bukan session
-            #         Webhook Midtrans tidak akan punya session pembeli!
             save_pending_order(order_id, produk_for_order(keranjang), session["pembeli_nama"])
             return render_template("bayar.html", snap_token=result["token"],
                                    client_key=MIDTRANS_CLIENT_KEY, snap_url=MIDTRANS_SNAP_URL,
@@ -400,10 +470,11 @@ def bayar():
 def payment_success():
     """Dipanggil dari browser via JS setelah snap.pay sukses."""
     data = request.get_json() or {}
+    products_dict = {b['id']: b for b in get_barang()}
     struk = {
         "pelanggan": session.get("pembeli_nama", "Tamu"),
         "tanggal":   datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-        "produk":    produk_for_order(restore_gambar(session.get("keranjang", []))),
+        "produk":    produk_for_order(restore_gambar_batch(session.get("keranjang", []), products_dict)),
         "total":     session.get("order_total", 0),
         "bayar":     session.get("order_total", 0),
         "kembalian": 0,
@@ -424,11 +495,7 @@ def struk_page():
 
 @app.route("/notifikasi-midtrans", methods=["POST"])
 def notifikasi_midtrans():
-    """
-    FIX #1: Webhook dari server Midtrans — TIDAK ADA session di sini.
-    Sebelumnya: session.get("keranjang") → selalu kosong → stok tidak berkurang, order tidak tersimpan.
-    Sekarang: ambil data dari JSONBin via pop_pending_order().
-    """
+    """Webhook dari server Midtrans — TIDAK ADA session di sini."""
     data = request.get_json()
     if not data:
         return jsonify({"status": "ignored"}), 200
@@ -454,8 +521,8 @@ def notifikasi_midtrans():
         keranjang = pending.get("keranjang", [])
         pelanggan = pending.get("pelanggan", "Guest")
 
-        # FIX #2: kurangi stok via JSONBin (persisten)
-        kurangi_stok(keranjang)
+        # ✅ Batch stok update
+        kurangi_stok_batch(keranjang)
 
         order = {
             "order_id": oid,
@@ -471,13 +538,12 @@ def notifikasi_midtrans():
 
     return jsonify({"status": "ok"}), 200
 
-# ===================== ADMIN =====================
+# ===================== ADMIN (OPTIMIZED) =====================
 @app.route("/admin", methods=["GET", "POST"])
 def admin_login():
     if session.get("admin_logged_in"):
         return redirect(url_for("admin_dashboard"))
     if request.method == "POST":
-        # FIX #6: Bandingkan hash SHA256, bukan plaintext
         input_hash = hashlib.sha256(request.form.get("password", "").encode()).hexdigest()
         if input_hash == ADMIN_PASSWORD_HASH:
             session["admin_logged_in"] = True
@@ -515,11 +581,11 @@ def admin_set_qris():
         raw  = qris_file.read()
         ext  = qris_file.filename.rsplit(".", 1)[-1].lower()
         mime = "image/png" if ext == "png" else "image/jpeg"
-        b64  = "data:" + mime + ";base64," + base64.b64encode(raw).decode()
-        set_qris(b64)   # FIX #3: merge, bukan overwrite
+        b64  = "" + mime + ";base64," + base64.b64encode(raw).decode()
+        set_qris(b64)
         flash("✅ QRIS berhasil diupload dan disimpan permanen!", "success")
     elif qris_url:
-        set_qris(qris_url)   # FIX #3: merge, bukan overwrite
+        set_qris(qris_url)
         flash("✅ QRIS berhasil disimpan permanen!", "success")
     else:
         flash("Masukkan URL atau upload file QRIS!", "error")
@@ -544,7 +610,6 @@ def admin_tambah():
         flash("Nama tidak boleh kosong!", "error")
         return redirect(url_for("admin_dashboard"))
 
-    # FIX #2: Tambah barang ke JSONBin (persisten, bukan STORE in-memory)
     nid  = get_next_id()
     data = jsonbin_get()
     data.setdefault("barang", []).append({"id": nid, "nama": nama, "harga": harga, "gambar": gambar, "stok": stok})
@@ -556,7 +621,6 @@ def admin_tambah():
 def admin_edit(item_id):
     if not session.get("admin_logged_in"):
         return redirect(url_for("admin_login"))
-    # FIX #2: Ambil data dari JSONBin
     data = jsonbin_get()
     item = next((b for b in data.get("barang", []) if b.get("id") == item_id), None)
     if not item:
@@ -584,7 +648,7 @@ def admin_edit(item_id):
         item["stok"]  = stok
         if gambar:
             item["gambar"] = gambar
-        jsonbin_set(data)   # FIX #2: simpan perubahan ke JSONBin
+        jsonbin_set(data)
         flash("✅ Berhasil diperbarui!", "success")
         return redirect(url_for("admin_dashboard"))
 
@@ -594,7 +658,6 @@ def admin_edit(item_id):
 def admin_hapus(item_id):
     if not session.get("admin_logged_in"):
         return redirect(url_for("admin_login"))
-    # FIX #2: Hapus dari JSONBin (persisten)
     data  = jsonbin_get()
     awal  = len(data.get("barang", []))
     data["barang"] = [b for b in data.get("barang", []) if b["id"] != item_id]
@@ -602,30 +665,6 @@ def admin_hapus(item_id):
     jsonbin_set(data)
     flash("🗑️ Dihapus." if hapus else "Tidak ditemukan.", "success" if hapus else "error")
     return redirect(url_for("admin_dashboard"))
-
-if __name__ == "__main__":
-    app.run(debug=False)
-
-def safe_gambar(gambar, item_id):
-    if gambar and gambar.startswith("data:"):
-        return "b64" + str(item_id)
-    return gambar
-
-def restore_gambar(keranjang):
-    result = []
-    for k in keranjang:
-        item = dict(k)
-        if str(item.get("gambar", "")).startswith("b64"):
-            b = item_by_id(item["id"])
-            item["gambar"] = b.get("gambar", "") if b else ""
-        result.append(item)
-    return result
-
-def produk_for_order(keranjang):
-    return [{"id": k["id"], "nama": k["nama"], "harga": k["harga"],
-             "jumlah": k["jumlah"], "subtotal": k["subtotal"]} for k in keranjang]
-
-# ===================== PUBLIC =====================
 
 if __name__ == "__main__":
     app.run(debug=False)
