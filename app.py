@@ -19,6 +19,98 @@ def save_data(data):
     with open('data.json', 'w') as f:
         json.dump(data, f, indent=2)
 
+# Route untuk menambah ke keranjang
+@app.route('/tambah-keranjang', methods=['POST'])
+def tambah_keranjang():
+    # Ambil data dari form
+    produk_id = request.form.get('produk_id')
+    nama_produk = request.form.get('nama_produk')
+    harga = int(request.form.get('harga', 0))
+    qty = int(request.form.get('qty', 1))
+    gambar = request.form.get('gambar', '/static/images/default.jpg')
+    
+    # Inisialisasi keranjang di session jika belum ada
+    if 'keranjang' not in session:
+        session['keranjang'] = []
+    
+    # Cek apakah produk sudah ada di keranjang
+    keranjang = session['keranjang']
+    produk_ditemukan = False
+    
+    for item in keranjang:
+        if item['produk_id'] == produk_id:
+            # Jika sudah ada, tambah qty
+            item['qty'] += qty
+            produk_ditemukan = True
+            break
+    
+    # Jika belum ada, tambah sebagai item baru
+    if not produk_ditemukan:
+        keranjang.append({
+            'produk_id': produk_id,
+            'nama_produk': nama_produk,
+            'harga': harga,
+            'qty': qty,
+            'gambar': gambar
+        })
+    
+    # Update session
+    session['keranjang'] = keranjang
+    session.modified = True
+    
+    # Redirect kembali ke halaman sebelumnya atau ke keranjang
+    return redirect(request.referrer or url_for('keranjang'))
+
+# Route untuk menampilkan keranjang
+@app.route('/keranjang')
+def keranjang():
+    if 'keranjang' not in session:
+        session['keranjang'] = []
+    
+    keranjang = session['keranjang']
+    total = sum(item['harga'] * item['qty'] for item in keranjang)
+    
+    return render_template('keranjang.html', 
+                         keranjang=keranjang, 
+                         total=total)
+
+# Route untuk update qty di keranjang
+@app.route('/update-keranjang', methods=['POST'])
+def update_keranjang():
+    produk_id = request.form.get('produk_id')
+    qty = int(request.form.get('qty', 1))
+    
+    if 'keranjang' in session:
+        for item in session['keranjang']:
+            if item['produk_id'] == produk_id:
+                if qty <= 0:
+                    # Hapus item jika qty 0 atau negatif
+                    session['keranjang'].remove(item)
+                else:
+                    item['qty'] = qty
+                break
+        session.modified = True
+    
+    return redirect(url_for('keranjang'))
+
+# Route untuk hapus item dari keranjang
+@app.route('/hapus-keranjang/<produk_id>')
+def hapus_keranjang(produk_id):
+    if 'keranjang' in session:
+        session['keranjang'] = [item for item in session['keranjang'] if item['produk_id'] != produk_id]
+        session.modified = True
+    
+    return redirect(url_for('keranjang'))
+
+# Route untuk kosongkan keranjang
+@app.route('/kosongkan-keranjang')
+def kosongkan_keranjang():
+    if 'keranjang' in session:
+        session.pop('keranjang', None)
+        session.modified = True
+    
+    return redirect(url_for('keranjang'))
+
 # Route halaman pilih metode pembayaran
 @app.route('/bayar', methods=['GET'])
 def halaman_bayar():
