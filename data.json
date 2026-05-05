@@ -1,10 +1,13 @@
 {
   "barang": [
-    {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "gambar": ""},
-    {"id": 2, "nama": "Air Mineral", "harga": 2000, "gambar": ""},
-    {"id": 3, "nama": "Roti Tawar", "harga": 7000, "gambar": ""},
-    {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "gambar": ""},
-    {"id": 5, "nama": "Susu UHT", "harga": 5000, "gambar": ""}
+    {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "stok": 50, "gambar": ""},
+    {"id": 2, "nama": "Air Mineral 600ml", "harga": 2000, "stok": 100, "gambar": ""},
+    {"id": 3, "nama": "Roti Tawar", "harga": 7000, "stok": 20, "gambar": ""},
+    {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "stok": 200, "gambar": ""},
+    {"id": 5, "nama": "Susu UHT 200ml", "harga": 5000, "stok": 30, "gambar": ""}
   ],
-  "next_id": 6
+  "next_id": 6,
+  "rekening_bank": [],
+  "pesanan": [],
+  "qris_image": ""
 }
