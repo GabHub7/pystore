@@ -1,103 +1,98 @@
 {% extends "base.html" %}
-{% block title %}PYSTORE – Daftar Order{% endblock %}
+{% block title %}Orders – PYSTORE Admin{% endblock %}
+{% block head %}
+<style>
+.order-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; margin-bottom:1rem; overflow:hidden;
+}
+.order-head {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:1rem 1.25rem; border-bottom:1px solid var(--border);
+  flex-wrap:wrap; gap:.75rem; background:var(--surface2);
+}
+.order-body { padding:1.25rem; }
+.order-items { margin-top:.75rem; }
+.order-item-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:.4rem 0; font-size:.875rem; border-bottom:1px solid var(--border);
+}
+.order-item-row:last-child { border-bottom:none; }
+.status-form { display:flex; gap:.5rem; align-items:center; }
+</style>
+{% endblock %}
 {% block content %}
+
 <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
   <div>
-    <h1>📋 Daftar <span class="text-accent">Order</span></h1>
-    <p class="text-muted">{{ orders|length }} total transaksi</p>
+    <h1>Daftar <span class="accent">Order</span></h1>
+    <p class="text-muted">{{ pesanan|length }} order masuk</p>
   </div>
   <a href="/admin/dashboard" class="btn btn-secondary">← Dashboard</a>
 </div>
 
-{% if not orders %}
+{% if not pesanan %}
   <div class="card" style="text-align:center;padding:3rem;">
-    <p style="font-size:3rem;">📭</p>
+    <p style="font-size:2.5rem;margin-bottom:.75rem;">📋</p>
     <h3>Belum Ada Order</h3>
-    <p class="text-muted">Order akan muncul di sini setelah pembeli melakukan transaksi.</p>
+    <p class="text-muted" style="margin-top:.4rem;">Order akan muncul di sini setelah pembeli checkout.</p>
   </div>
 {% else %}
-  <!-- Stats -->
-  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;">
-    {% set total_semua = orders|sum(attribute='total') %}
-    {% set total_cod = orders|selectattr('metode','equalto','COD')|list|length %}
-    {% set total_qris = orders|selectattr('metode','equalto','QRIS')|list|length %}
-    <div class="card" style="text-align:center;padding:1rem;">
-      <p style="font-size:1.5rem;font-weight:800;color:var(--accent);">{{ orders|length }}</p>
-      <p class="text-muted" style="font-size:0.8rem;">Total Order</p>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem;">
-      <p style="font-size:1rem;font-weight:800;color:var(--accent);">Rp{{ "{:,}".format(total_semua) }}</p>
-      <p class="text-muted" style="font-size:0.8rem;">Total Omzet</p>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem;">
-      <p style="font-size:1.5rem;font-weight:800;color:#f0b86e;">{{ total_cod }}</p>
-      <p class="text-muted" style="font-size:0.8rem;">Order COD</p>
-    </div>
-    <div class="card" style="text-align:center;padding:1rem;">
-      <p style="font-size:1.5rem;font-weight:800;color:#8ab4f8;">{{ total_qris }}</p>
-      <p class="text-muted" style="font-size:0.8rem;">Order QRIS</p>
-    </div>
-  </div>
-
-  <div style="display:flex;flex-direction:column;gap:1rem;">
-    {% for order in orders|reverse %}
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;">
-        <div>
-          <p style="font-weight:700;font-size:1rem;">{{ order.order_id }}</p>
-          <p class="text-muted" style="font-size:0.82rem;">{{ order.tanggal }}</p>
-        </div>
-        <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
-          {% if order.metode and 'COD' in order.metode %}
-          <span style="background:#2d2010;border:1px solid #5c4020;color:#f0b86e;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">🚚 COD</span>
-          {% elif order.metode and 'QRIS' in order.metode %}
-          <span style="background:#1a2240;border:1px solid #2d3f6e;color:#8ab4f8;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">📷 QRIS</span>
-          {% else %}
-          <span style="background:#1a2240;border:1px solid #2d3f6e;color:#8ab4f8;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;">💳 Online</span>
-          {% endif %}
-          {% if order.status %}
-          <span style="background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:0.78rem;">{{ order.status }}</span>
-          {% endif %}
-        </div>
+  {% for p in pesanan|reverse %}
+  <div class="order-card">
+    <div class="order-head">
+      <div>
+        <p style="font-family:monospace;font-size:.85rem;color:var(--text2);">{{ p.order_id }}</p>
+        <p style="font-weight:700;font-size:1rem;margin-top:2px;">{{ p.pembeli }}</p>
+        <p style="font-size:.78rem;color:var(--text3);margin-top:2px;">{{ p.tanggal }}</p>
       </div>
-
-      <div style="display:flex;gap:2rem;flex-wrap:wrap;">
-        <!-- Produk -->
-        <div style="flex:2;min-width:200px;">
-          <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">Produk</p>
-          {% for item in order.produk %}
-          <div style="display:flex;justify-content:space-between;font-size:0.88rem;margin-bottom:0.25rem;">
-            <span>{{ item.nama }} x{{ item.jumlah }}</span>
-            <span class="text-accent">Rp{{ "{:,}".format(item.subtotal) }}</span>
-          </div>
-          {% endfor %}
-          <div style="border-top:1px solid var(--border);margin-top:0.5rem;padding-top:0.5rem;display:flex;justify-content:space-between;font-weight:700;">
-            <span>Total</span>
-            <span class="text-accent">Rp{{ "{:,}".format(order.total) }}</span>
-          </div>
-        </div>
-
-        <!-- Info pembeli -->
-        <div style="flex:1;min-width:160px;">
-          <p style="font-size:0.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;">Info Pembeli</p>
-          <p style="font-size:0.88rem;"><span class="text-muted">Nama:</span> {{ order.pelanggan }}</p>
-          {% if order.nama_penerima %}
-          <p style="font-size:0.88rem;"><span class="text-muted">Penerima:</span> {{ order.nama_penerima }}</p>
-          {% endif %}
-          {% if order.telepon %}
-          <p style="font-size:0.88rem;"><span class="text-muted">📞</span> {{ order.telepon }}</p>
-          {% endif %}
-          {% if order.alamat %}
-          <p style="font-size:0.88rem;"><span class="text-muted">📍</span> {{ order.alamat }}</p>
-          {% endif %}
-          {% if order.catatan %}
-          <p style="font-size:0.88rem;"><span class="text-muted">📝</span> {{ order.catatan }}</p>
-          {% endif %}
-        </div>
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+        <span class="badge badge-purple">{{ p.metode }}</span>
+        <span class="badge {% if 'Selesai' in p.status %}badge-green{% elif 'Menunggu' in p.status %}badge-amber{% else %}badge-blue{% endif %}">
+          {{ p.status }}
+        </span>
+        <p style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;color:var(--accent2);">
+          Rp{{ "{:,}".format(p.total) }}
+        </p>
       </div>
     </div>
-    {% endfor %}
+    <div class="order-body">
+      {% if p.metode == 'COD' and p.get('nama_penerima') %}
+      <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;">
+        📦 <strong>{{ p.nama_penerima }}</strong> — {{ p.telepon }}<br>
+        <span class="text-muted">{{ p.alamat }}</span>
+        {% if p.catatan %}<br><span class="text-muted">Catatan: {{ p.catatan }}</span>{% endif %}
+      </div>
+      {% endif %}
+      {% if p.metode == 'Transfer Bank' and p.get('bank_pengirim') %}
+      <p style="font-size:.85rem;color:var(--text2);margin-bottom:.75rem;">🏦 Transfer dari bank: <strong>{{ p.bank_pengirim }}</strong></p>
+      {% endif %}
+
+      <div class="order-items">
+        {% for item in p.items %}
+        <div class="order-item-row">
+          <span>{{ item.nama }}</span>
+          <span class="text-muted">×{{ item.jumlah }}</span>
+          <span>Rp{{ "{:,}".format(item.subtotal) }}</span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div style="margin-top:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+        <form method="POST" action="/admin/update-status/{{ p.order_id }}" class="status-form">
+          <select name="status" style="font-size:.85rem;padding:.4rem .75rem;border-radius:9px;">
+            <option {% if p.status=='Menunggu Verifikasi' %}selected{% endif %}>Menunggu Verifikasi</option>
+            <option {% if p.status=='Menunggu Konfirmasi' %}selected{% endif %}>Menunggu Konfirmasi</option>
+            <option {% if p.status=='Diproses' %}selected{% endif %}>Diproses</option>
+            <option {% if p.status=='Dikirim' %}selected{% endif %}>Dikirim</option>
+            <option {% if p.status=='Selesai' %}selected{% endif %}>Selesai</option>
+            <option {% if p.status=='Dibatalkan' %}selected{% endif %}>Dibatalkan</option>
+          </select>
+          <button type="submit" class="btn btn-secondary btn-sm">Update</button>
+        </form>
+      </div>
+    </div>
   </div>
+  {% endfor %}
 {% endif %}
 {% endblock %}
-
