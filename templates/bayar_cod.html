@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}PYSTORE – COD{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:2rem auto;text-align:center;">
+  <div class="page-header" style="text-align:center;">
+    <p style="font-size:3rem;">💵</p>
+    <h1>Bayar di <span class="text-accent">Tempat</span></h1>
+    <p class="text-muted">Bayar tunai saat barang diterima</p>
+  </div>
+
+  <div class="card" style="margin-bottom:1.5rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <span class="text-muted">Total yang harus dibayar</span>
+      <strong class="text-accent" style="font-size:1.5rem;">Rp{{ "{:,}".format(total) }}</strong>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span class="text-muted">Order ID</span>
+      <span style="font-size:0.85rem;font-family:monospace;">{{ order_id }}</span>
+    </div>
+  </div>
+
+  <!-- Info COD -->
+  <div class="card" style="margin-bottom:1.5rem;text-align:left;">
+    <p style="font-weight:700;margin-bottom:1rem;text-align:center;color:#f59e0b;">📦 Informasi COD</p>
+    <ul style="margin:0;padding-left:1.5rem;color:#aaa;font-size:0.9rem;line-height:2;">
+      <li>Pembayaran dilakukan secara tunai</li>
+      <li>Bayar langsung ke kurir saat barang diterima</li>
+      <li>Pastikan uang pas atau siapkan uang kecil</li>
+      <li>Periksa barang sebelum membayar</li>
+      <li>Area pengiriman terbatas (akan dikonfirmasi admin)</li>
+    </ul>
+  </div>
+
+  <!-- Konfirmasi -->
+  <div class="card" style="background:#1a1a10;border-color:#f59e0b;">
+    <p style="font-weight:700;margin-bottom:0.5rem;">⚠️ Catatan Penting</p>
+    <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">
+      Admin akan menghubungi Anda untuk konfirmasi alamat dan ketersediaan layanan COD di area Anda.
+    </p>
+    <form method="POST" action="/konfirmasi-cod">
+      <input type="hidden" name="order_id" value="{{ order_id }}">
+      <input type="hidden" name="total" value="{{ total }}">
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.8rem;">
+        ✅ Lanjutkan Pesanan COD
+      </button>
+    </form>
+    <a href="/bayar" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:0.7rem;">
+      ← Ganti Metode Pembayaran
+    </a>
+  </div>
+</div>
+{% endblock %}
