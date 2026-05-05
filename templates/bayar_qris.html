@@ -1,43 +1,89 @@
 {% extends "base.html" %}
-{% block title %}Bayar QRIS - PYSTORE{% endblock %}
+{% block title %}Bayar QRIS – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.pay-wrap { max-width:520px; margin:2.5rem auto; }
+.pay-header { text-align:center; margin-bottom:2rem; }
+.pay-icon {
+  width:72px; height:72px; border-radius:20px;
+  background:var(--accent-dim); border:1px solid rgba(124,106,247,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:2rem; margin:0 auto 1.25rem;
+}
+.summary-box {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:14px; padding:1.25rem; margin-bottom:1.5rem;
+}
+.summary-row { display:flex; justify-content:space-between; align-items:center; padding:.4rem 0; }
+.summary-row + .summary-row { border-top:1px solid var(--border); padding-top:.8rem; margin-top:.4rem; }
+.total-amount { font-family:var(--font-display); font-size:1.6rem; font-weight:800; color:var(--accent2); }
+.qris-box {
+  background:#fff; border-radius:20px; padding:1.25rem;
+  display:flex; align-items:center; justify-content:center;
+  margin:0 auto 1.5rem; max-width:280px;
+  box-shadow:0 8px 40px rgba(0,0,0,.4);
+}
+.qris-box img { width:100%; max-width:240px; height:auto; display:block; border-radius:8px; }
+.qris-empty {
+  width:240px; height:240px; background:#f5f5f5; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:.5rem;
+}
+.tips-box {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:14px; padding:1rem 1.25rem; margin-bottom:1.5rem;
+}
+.tips-box p { font-size:.85rem; color:var(--text2); margin:.2rem 0; }
+</style>
+{% endblock %}
 {% block content %}
+<div class="pay-wrap">
+  <div class="pay-header">
+    <div class="pay-icon">📱</div>
+    <h1>Bayar via <span class="accent">QRIS</span></h1>
+    <p class="text-muted" style="margin-top:.4rem;">Scan QR code lalu konfirmasi ke admin</p>
+  </div>
 
-<div style="max-width:480px;margin:2rem auto;padding:2rem;background:#1a1a1a;border-radius:12px;text-align:center;">
-    <h1 style="color:#f59e0b;margin-bottom:0.5rem;">📱 Bayar via QRIS</h1>
-    <p style="color:#888;margin-bottom:2rem;">Scan QR code di bawah</p>
-
-    <div style="background:#0f0f0f;padding:1.5rem;border-radius:8px;margin-bottom:1.5rem;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
-            <span style="color:#888;">Total</span>
-            <strong style="color:#f59e0b;font-size:1.3rem;">Rp{{ "{:,}".format(total) }}</strong>
-        </div>
-        <div style="display:flex;justify-content:space-between;">
-            <span style="color:#888;">Order ID</span>
-            <span style="font-family:monospace;font-size:0.9rem;">{{ order_id }}</span>
-        </div>
+  <div class="summary-box">
+    <div class="summary-row">
+      <span class="text-muted">Order ID</span>
+      <span style="font-family:monospace;font-size:.85rem;color:var(--text2);">{{ order_id }}</span>
     </div>
-
-    <div style="background:#fff;padding:1rem;border-radius:12px;display:inline-block;margin-bottom:1.5rem;">
-        {% if qris_url %}
-            <img src="{{ qris_url }}" alt="QRIS" style="width:256px;height:256px;object-fit:contain;">
-        {% else %}
-            <div style="width:256px;height:256px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;">
-                <p style="color:#999;margin:0;">QRIS belum diatur admin</p>
-            </div>
-        {% endif %}
+    <div class="summary-row">
+      <span class="text-muted">Pembeli</span>
+      <strong>{{ pembeli }}</strong>
     </div>
+    <div class="summary-row">
+      <span class="text-muted">Total Bayar</span>
+      <span class="total-amount">Rp{{ "{:,}".format(total) }}</span>
+    </div>
+  </div>
 
-    <p style="color:#888;font-size:0.9rem;margin-bottom:1.5rem;">
-        Buka GoPay/DANA/OVO/ShopeePay<br>Scan QR code di atas
-    </p>
+  <!-- QRIS IMAGE — ditampilkan dari data yang diset admin -->
+  <div class="qris-box">
+    {% if qris_url %}
+      <img src="{{ qris_url }}" alt="QR Code QRIS">
+    {% else %}
+      <div class="qris-empty">
+        <span style="font-size:2.5rem;">📷</span>
+        <p style="color:#999;font-size:.8rem;text-align:center;">QRIS belum<br>diatur admin</p>
+      </div>
+    {% endif %}
+  </div>
 
-    <form method="POST" action="/konfirmasi-qris">
-        <button type="submit" style="width:100%;padding:1rem;background:#f59e0b;border:none;border-radius:8px;color:#000;font-weight:bold;cursor:pointer;margin-bottom:0.5rem;">
-            ✅ Saya Sudah Bayar
-        </button>
-    </form>
+  <div class="tips-box">
+    <p style="font-weight:600;color:var(--text);margin-bottom:.5rem;">📲 Cara bayar QRIS:</p>
+    <p>1. Buka aplikasi GoPay / DANA / OVO / ShopeePay</p>
+    <p>2. Pilih menu <strong>Scan QR</strong></p>
+    <p>3. Scan kode di atas & bayar sesuai total</p>
+    <p>4. Klik tombol konfirmasi di bawah</p>
+  </div>
 
-    <a href="/bayar" style="display:block;padding:0.8rem;background:#333;color:#fff;text-decoration:none;border-radius:8px;">← Ganti Metode</a>
+  <form method="POST" action="/konfirmasi-qris">
+    <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-bottom:.75rem;">
+      ✅ Saya Sudah Bayar
+    </button>
+  </form>
+  <a href="/keranjang" class="btn btn-ghost btn-full" style="border:1px solid var(--border);">← Ganti Metode Pembayaran</a>
 </div>
-
 {% endblock %}
