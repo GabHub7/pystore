@@ -1,86 +1,111 @@
 {% extends "base.html" %}
-{% block title %}PYSTORE – Struk{% endblock %}
+{% block title %}Struk – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.struk-wrap { max-width:520px; margin:2.5rem auto; }
+.struk-header { text-align:center; margin-bottom:2rem; }
+.struk-icon { font-size:3.5rem; margin-bottom:1rem; display:block; }
+.struk-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; overflow:hidden;
+}
+.struk-top {
+  background:linear-gradient(135deg,var(--surface2),var(--surface));
+  padding:1.5rem; text-align:center; border-bottom:1px dashed var(--border2);
+}
+.struk-body { padding:1.5rem; }
+.struk-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:.5rem 0; font-size:.9rem;
+}
+.struk-row + .struk-row { border-top:1px solid var(--border); }
+.struk-total {
+  font-family:var(--font-display); font-size:1.5rem; font-weight:800; color:var(--accent2);
+}
+.struk-footer {
+  text-align:center; border-top:1px dashed var(--border2);
+  padding:1.25rem; color:var(--text3); font-size:.85rem;
+}
+.delivery-box {
+  background:var(--gold-dim); border:1px solid rgba(240,180,41,.2);
+  border-radius:12px; padding:1rem 1.25rem; margin-top:1rem;
+}
+.delivery-box p { font-size:.875rem; margin:.25rem 0; }
+</style>
+{% endblock %}
 {% block content %}
-<div style="max-width:520px;margin:2rem auto;">
-  <div style="text-align:center;margin-bottom:2rem;">
-    {% if struk.metode and 'COD' in struk.metode %}
-      <p style="font-size:3.5rem;">🚚</p>
-      <h1>Pesanan <span class="text-accent">Diterima!</span></h1>
-      <p class="text-muted">Pesanan COD kamu sedang diproses, {{ struk.pelanggan }}!</p>
-    {% elif struk.metode and 'QRIS' in struk.metode %}
-      <p style="font-size:3.5rem;">📷</p>
-      <h1>Menunggu <span class="text-accent">Verifikasi</span></h1>
-      <p class="text-muted">Pembayaran QRIS kamu sedang diverifikasi admin.</p>
+<div class="struk-wrap">
+  <div class="struk-header">
+    {% if 'COD' in struk.metode %}
+      <span class="struk-icon">🚚</span>
+      <h1>Pesanan <span class="accent">Diterima!</span></h1>
+      <p class="text-muted">Pesanan COD kamu sedang diproses, <strong>{{ struk.pelanggan }}</strong>!</p>
+    {% elif 'QRIS' in struk.metode %}
+      <span class="struk-icon">📷</span>
+      <h1>Menunggu <span class="accent">Verifikasi</span></h1>
+      <p class="text-muted">Pembayaran QRIS sedang diverifikasi admin.</p>
     {% else %}
-      <p style="font-size:3.5rem;">🧾</p>
-      <h1>Transaksi <span class="text-accent">Berhasil!</span></h1>
-      <p class="text-muted">Terima kasih telah berbelanja, {{ struk.pelanggan }}!</p>
+      <span class="struk-icon">🧾</span>
+      <h1>Transaksi <span class="accent">Berhasil!</span></h1>
+      <p class="text-muted">Terima kasih telah berbelanja, <strong>{{ struk.pelanggan }}</strong>!</p>
     {% endif %}
   </div>
 
-  <div class="card" style="border-color:#2d5c44;">
-    <div style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:1rem;margin-bottom:1rem;">
-      <h2 style="color:var(--accent);">PYSTORE</h2>
-      <p class="text-muted" style="font-size:0.85rem;">{{ struk.tanggal }}</p>
-      <p>Pelanggan: <strong>{{ struk.pelanggan }}</strong></p>
-      <p class="text-muted" style="font-size:0.8rem;">Order ID: {{ struk.order_id }}</p>
-      {% if struk.metode %}
-      <span style="background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px;font-size:0.78rem;">{{ struk.metode }}</span>
-      {% endif %}
+  <div class="struk-card">
+    <div class="struk-top">
+      <p style="font-family:var(--font-display);font-size:1.25rem;font-weight:800;color:var(--accent2);">PYSTORE</p>
+      <p class="text-muted" style="font-size:.8rem;">{{ struk.tanggal }}</p>
+      <p style="margin:.4rem 0;">Pelanggan: <strong>{{ struk.pelanggan }}</strong></p>
+      <p style="font-family:monospace;font-size:.8rem;color:var(--text3);">{{ struk.order_id }}</p>
+      <span class="badge badge-purple" style="margin-top:.5rem;">{{ struk.metode }}</span>
     </div>
 
-    <table>
-      <thead><tr><th>Barang</th><th style="text-align:center;">Qty</th><th style="text-align:right;">Total</th></tr></thead>
-      <tbody>
-        {% for item in struk.produk %}
-        <tr>
-          <td>{{ item.nama }}</td>
-          <td style="text-align:center;">x{{ item.jumlah }}</td>
-          <td style="text-align:right;">Rp{{ "{:,}".format(item.subtotal) }}</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="struk-body">
+      <table style="margin-bottom:1rem;">
+        <thead>
+          <tr>
+            <th>Barang</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in struk.produk %}
+          <tr>
+            <td>{{ item.nama }}</td>
+            <td style="text-align:center;">×{{ item.jumlah }}</td>
+            <td style="text-align:right;">Rp{{ "{:,}".format(item.subtotal) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
 
-    <div style="border-top:1px solid var(--border);margin-top:1rem;padding-top:1rem;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:0.4rem;">
+      <div class="struk-row" style="padding-top:1rem;border-top:2px solid var(--border);">
         <span class="text-muted">Total</span>
-        <strong class="text-accent" style="font-size:1.2rem;">Rp{{ "{:,}".format(struk.total) }}</strong>
+        <span class="struk-total">Rp{{ "{:,}".format(struk.total) }}</span>
       </div>
-      {% if struk.metode and 'COD' in struk.metode %}
-      <div style="display:flex;justify-content:space-between;">
-        <span class="text-muted">Pembayaran</span>
-        <strong style="color:var(--warn);">Bayar saat barang tiba</strong>
-      </div>
-      {% elif struk.metode and 'QRIS' in struk.metode %}
-      <div style="display:flex;justify-content:space-between;">
+      <div class="struk-row">
         <span class="text-muted">Status</span>
-        <strong style="color:var(--warn);">Menunggu Verifikasi Admin</strong>
+        <span class="badge {% if 'Selesai' in struk.status %}badge-green{% elif 'Menunggu' in struk.status %}badge-amber{% else %}badge-blue{% endif %}">
+          {{ struk.status }}
+        </span>
       </div>
-      {% else %}
-      <div style="display:flex;justify-content:space-between;">
-        <span class="text-muted">Status</span>
-        <strong class="text-success">{{ struk.status }}</strong>
+
+      {% if 'COD' in struk.metode and struk.nama_penerima %}
+      <div class="delivery-box">
+        <p style="font-weight:700;color:var(--gold);margin-bottom:.5rem;">📦 Info Pengiriman</p>
+        <p><span class="text-muted">Penerima:</span> {{ struk.nama_penerima }}</p>
+        <p><span class="text-muted">Telepon:</span>  {{ struk.telepon }}</p>
+        <p><span class="text-muted">Alamat:</span>   {{ struk.alamat }}</p>
+        {% if struk.catatan %}
+        <p><span class="text-muted">Catatan:</span>  {{ struk.catatan }}</p>
+        {% endif %}
       </div>
       {% endif %}
     </div>
 
-    <!-- Info COD -->
-    {% if struk.metode and 'COD' in struk.metode %}
-    <div style="margin-top:1rem;padding:1rem;background:var(--surface2);border-radius:8px;border:1px solid var(--border);">
-      <p style="font-weight:700;margin-bottom:0.5rem;">📦 Info Pengiriman</p>
-      <p style="font-size:0.88rem;"><span class="text-muted">Penerima:</span> {{ struk.nama_penerima }}</p>
-      <p style="font-size:0.88rem;"><span class="text-muted">Telepon:</span> {{ struk.telepon }}</p>
-      <p style="font-size:0.88rem;"><span class="text-muted">Alamat:</span> {{ struk.alamat }}</p>
-      {% if struk.catatan %}
-      <p style="font-size:0.88rem;"><span class="text-muted">Catatan:</span> {{ struk.catatan }}</p>
-      {% endif %}
-    </div>
-    {% endif %}
-
-    <div style="text-align:center;margin-top:1.5rem;padding-top:1rem;border-top:1px dashed var(--border);">
-      <p style="font-size:1.1rem;">🙏 Terima kasih!</p>
-      <p class="text-muted" style="font-size:0.85rem;">Semoga harimu menyenangkan 😊</p>
+    <div class="struk-footer">
+      🙏 Terima kasih sudah belanja di PYSTORE!
     </div>
   </div>
 
