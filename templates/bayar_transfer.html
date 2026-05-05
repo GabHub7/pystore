@@ -1,49 +1,111 @@
 {% extends "base.html" %}
-{% block title %}Transfer Bank - PYSTORE{% endblock %}
+{% block title %}Transfer Bank – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.pay-wrap { max-width:520px; margin:2.5rem auto; }
+.pay-header { text-align:center; margin-bottom:2rem; }
+.pay-icon {
+  width:72px; height:72px; border-radius:20px;
+  background:var(--blue-dim); border:1px solid rgba(96,165,250,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:2rem; margin:0 auto 1.25rem;
+}
+.summary-box {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:14px; padding:1.25rem; margin-bottom:1.5rem;
+}
+.summary-row { display:flex; justify-content:space-between; align-items:center; padding:.4rem 0; }
+.summary-row + .summary-row { border-top:1px solid var(--border); padding-top:.8rem; margin-top:.4rem; }
+.total-amount { font-family:var(--font-display); font-size:1.6rem; font-weight:800; color:var(--blue); }
+.bank-card {
+  background:var(--surface2); border:1px solid var(--border);
+  border-left:3px solid var(--accent); border-radius:14px;
+  padding:1rem 1.25rem; margin-bottom:.75rem;
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+}
+.bank-name { font-family:var(--font-display); font-weight:700; color:var(--accent2); font-size:.9rem; }
+.bank-nomor { font-family:monospace; font-size:1.1rem; font-weight:600; margin:.2rem 0; }
+.bank-an { font-size:.8rem; color:var(--text2); }
+.copy-btn {
+  background:var(--surface3); border:1px solid var(--border); border-radius:8px;
+  padding:.3rem .7rem; font-size:.75rem; color:var(--text2); cursor:pointer;
+  font-family:var(--font-body); transition:all .18s; white-space:nowrap;
+}
+.copy-btn:hover { border-color:var(--accent); color:var(--accent); }
+.form-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.5rem; margin-top:1.5rem;
+}
+</style>
+{% endblock %}
 {% block content %}
+<div class="pay-wrap">
+  <div class="pay-header">
+    <div class="pay-icon">🏦</div>
+    <h1>Transfer <span class="accent">Bank</span></h1>
+    <p class="text-muted" style="margin-top:.4rem;">Transfer ke rekening di bawah, lalu konfirmasi</p>
+  </div>
 
-<div style="max-width:480px;margin:2rem auto;padding:2rem;background:#1a1a1a;border-radius:12px;">
-    <h1 style="color:#f59e0b;text-align:center;margin-bottom:0.5rem;">🏦 Transfer Bank</h1>
-    <p style="color:#888;text-align:center;margin-bottom:2rem;">Transfer ke rekening berikut</p>
-
-    <div style="background:#0f0f0f;padding:1.5rem;border-radius:8px;margin-bottom:1.5rem;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
-            <span style="color:#888;">Total</span>
-            <strong style="color:#f59e0b;font-size:1.3rem;">Rp{{ "{:,}".format(total) }}</strong>
-        </div>
-        <div style="display:flex;justify-content:space-between;">
-            <span style="color:#888;">Order ID</span>
-            <span style="font-family:monospace;font-size:0.9rem;">{{ order_id }}</span>
-        </div>
+  <div class="summary-box">
+    <div class="summary-row">
+      <span class="text-muted">Order ID</span>
+      <span style="font-family:monospace;font-size:.85rem;color:var(--text2);">{{ order_id }}</span>
     </div>
+    <div class="summary-row">
+      <span class="text-muted">Pembeli</span>
+      <strong>{{ pembeli }}</strong>
+    </div>
+    <div class="summary-row">
+      <span class="text-muted">Total Transfer</span>
+      <span class="total-amount">Rp{{ "{:,}".format(total) }}</span>
+    </div>
+  </div>
 
-    {% if rekening %}
-        {% for bank in rekening %}
-        <div style="background:#0f0f0f;padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:4px solid #f59e0b;">
-            <strong style="color:#f59e0b;">{{ bank.nama_bank or bank.bank }}</strong><br>
-            <span style="font-family:monospace;font-size:1.1rem;">{{ bank.nomor_rekening or bank.nomor }}</span><br>
-            <small style="color:#888;">a.n {{ bank.atas_nama or bank.atas_nama }}</small>
-        </div>
-        {% endfor %}
-    {% else %}
-        <p style="color:#888;text-align:center;">Rekening belum diatur admin</p>
-    {% endif %}
+  <p class="section-label">Rekening Tujuan</p>
+  {% if rekening %}
+    {% for bank in rekening %}
+    <div class="bank-card">
+      <div>
+        <p class="bank-name">{{ bank.bank }}</p>
+        <p class="bank-nomor" id="nomor-{{ loop.index }}">{{ bank.nomor }}</p>
+        <p class="bank-an">a.n {{ bank.atas_nama }}</p>
+      </div>
+      <button class="copy-btn" onclick="copyNomor('nomor-{{ loop.index }}', this)">Salin</button>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card" style="text-align:center;padding:2rem;color:var(--text2);">
+      <p>⚠️ Rekening bank belum diatur admin</p>
+    </div>
+  {% endif %}
 
-    <form method="POST" action="/konfirmasi-transfer" style="margin-top:1.5rem;">
-        <select name="bank_pengirim" required style="width:100%;padding:0.8rem;margin-bottom:1rem;border-radius:8px;border:1px solid #333;background:#0f0f0f;color:#fff;">
-            <option value="">Bank yang Anda gunakan</option>
-            <option value="BCA">BCA</option>
-            <option value="BNI">BNI</option>
-            <option value="Mandiri">Mandiri</option>
-            <option value="BRI">BRI</option>
+  <div class="form-card">
+    <h3 style="margin-bottom:1.25rem;">Konfirmasi Transfer</h3>
+    <form method="POST" action="/konfirmasi-transfer">
+      <div class="form-group">
+        <label>Bank yang Anda Gunakan</label>
+        <select name="bank_pengirim" required>
+          <option value="">— Pilih bank —</option>
+          <option>BCA</option><option>BNI</option><option>Mandiri</option>
+          <option>BRI</option><option>BSI</option><option>CIMB Niaga</option>
+          <option>Danamon</option><option>Permata</option><option>Lainnya</option>
         </select>
-        
-        <button type="submit" style="width:100%;padding:1rem;background:#f59e0b;border:none;border-radius:8px;color:#000;font-weight:bold;cursor:pointer;">
-            ✅ Saya Sudah Transfer
-        </button>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:.5rem;">
+        ✅ Saya Sudah Transfer
+      </button>
     </form>
+  </div>
 
-    <a href="/bayar" style="display:block;text-align:center;margin-top:0.5rem;padding:0.8rem;background:#333;color:#fff;text-decoration:none;border-radius:8px;">← Ganti Metode</a>
+  <a href="/keranjang" class="btn btn-ghost btn-full" style="border:1px solid var(--border);margin-top:.75rem;">← Ganti Metode Pembayaran</a>
 </div>
-
+<script>
+function copyNomor(id, btn) {
+  var txt = document.getElementById(id).textContent.trim();
+  navigator.clipboard.writeText(txt).then(function() {
+    btn.textContent = '✓ Disalin!';
+    setTimeout(function(){ btn.textContent='Salin'; }, 2000);
+  });
+}
+</script>
 {% endblock %}
