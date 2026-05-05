@@ -1,130 +1,143 @@
 {% extends "base.html" %}
-{% block title %}PYSTORE – Admin Dashboard{% endblock %}
+{% block title %}Dashboard Admin – PYSTORE{% endblock %}
 {% block head %}
 <style>
-  .dash-header {
-    display:flex; align-items:flex-start; justify-content:space-between;
-    flex-wrap:wrap; gap:1rem; margin-bottom:2rem;
-  }
-  .section-title {
-    font-size:0.72rem; font-weight:700; letter-spacing:.1em;
-    text-transform:uppercase; color:var(--text3);
-    margin-bottom:0.75rem;
-  }
+.dash-header {
+  display:flex; align-items:flex-start; justify-content:space-between;
+  flex-wrap:wrap; gap:1rem; margin-bottom:2rem;
+}
+.qris-panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.5rem; margin-bottom:1.5rem;
+  display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-start;
+}
+.qris-preview {
+  width:110px; height:110px; border-radius:14px; overflow:hidden;
+  background:#fff; border:1px solid var(--border);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.qris-preview img { width:100%; height:100%; object-fit:contain; }
+.add-panel {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.5rem; margin-bottom:1.5rem;
+}
+.prod-row {
+  display:flex; align-items:center; gap:1rem; padding:.85rem 1rem;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:14px; margin-bottom:.6rem; flex-wrap:wrap;
+  transition:border-color .18s;
+}
+.prod-row:last-child{ margin-bottom:0; }
+.prod-row:hover { border-color:var(--border2); }
+.prod-thumb {
+  width:56px; height:56px; border-radius:10px;
+  overflow:hidden; background:var(--surface3);
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+.prod-thumb img { width:100%; height:100%; object-fit:cover; }
+.stock-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; }
 
-  /* QRIS panel */
-  .qris-panel {
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:1.5rem;
-    margin-bottom:1.5rem;
-    display:flex; gap:1.5rem; flex-wrap:wrap; align-items:flex-start;
-  }
-  .qris-preview {
-    width:100px; height:100px; border-radius:12px;
-    overflow:hidden; background:var(--surface2);
-    border:1px solid var(--border);
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-  }
-  .qris-preview img { width:100%; height:100%; object-fit:contain; background:#fff; }
-  .mode-btn {
-    padding:0.3rem 0.85rem; border-radius:8px;
-    font-size:0.78rem; font-weight:700; cursor:pointer;
-    border:1px solid var(--border); font-family:'Plus Jakarta Sans',sans-serif;
-    transition:all .18s;
-  }
-  .mode-btn.active { background:var(--accent); color:#000; border-color:var(--accent); }
-  .mode-btn:not(.active) { background:transparent; color:var(--text2); }
-
-  /* Tambah barang panel */
-  .add-panel {
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:1.5rem;
-    margin-bottom:1.5rem;
-  }
-
-  /* Produk table row */
-  .prod-row {
-    display:flex; align-items:center; gap:1rem;
-    padding:0.85rem 1rem;
-    background:var(--surface2);
-    border:1px solid var(--border);
-    border-radius:12px;
-    margin-bottom:0.6rem;
-    flex-wrap:wrap;
-    transition:border-color .18s;
-  }
-  .prod-row:last-child { margin-bottom:0; }
-  .prod-row:hover { border-color:var(--border2); }
-  .prod-thumb {
-    width:56px; height:56px; border-radius:10px;
-    overflow:hidden; background:var(--surface3);
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-  }
-  .prod-thumb img { width:100%; height:100%; object-fit:cover; }
-  .stock-indicator {
-    display:inline-block; width:7px; height:7px;
-    border-radius:50%; margin-right:5px;
-  }
+.rek-card {
+  display:flex; align-items:center; gap:1rem;
+  background:var(--surface2); border:1px solid var(--border);
+  border-left:3px solid var(--accent); border-radius:12px;
+  padding:.85rem 1.1rem; margin-bottom:.6rem; flex-wrap:wrap;
+}
+.rek-card:last-child { margin-bottom:0; }
 </style>
 {% endblock %}
 {% block content %}
 
-{# ── HEADER ── #}
 <div class="dash-header">
   <div>
     <h1>Admin <span class="accent">Dashboard</span></h1>
-    <p class="text-muted">Kelola produk dan pengaturan toko</p>
+    <p class="text-muted">Kelola produk, QRIS, dan rekening bank toko</p>
   </div>
-  <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-    <a href="/admin/orders" class="btn btn-secondary">📋 Daftar Order</a>
-    <a href="/admin/logout" class="btn btn-danger">Logout</a>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <a href="/admin/orders"  class="btn btn-secondary">📋 Daftar Order</a>
+    <a href="/admin/logout"  class="btn btn-danger">Logout</a>
   </div>
 </div>
 
-{# ── QRIS PANEL ── #}
-<p class="section-title">📷 Pengaturan QRIS</p>
+<!-- ── QRIS ── -->
+<p class="section-label">📷 Pengaturan QRIS</p>
 <div class="qris-panel">
-  <div style="flex-shrink:0;">
-    {% if qris_url %}
-      <div class="qris-preview"><img src="{{ qris_url }}" alt="QRIS"></div>
-      <p style="font-size:0.72rem;color:var(--green);margin-top:0.4rem;text-align:center;font-weight:700;">✓ QRIS Aktif</p>
-    {% else %}
-      <div class="qris-preview">
+  <div style="flex-shrink:0;text-align:center;">
+    <div class="qris-preview">
+      {% if qris_url %}
+        <img src="{{ qris_url }}" alt="QRIS">
+      {% else %}
         <span style="font-size:2.5rem;">📷</span>
-      </div>
-      <p style="font-size:0.72rem;color:var(--text3);margin-top:0.4rem;text-align:center;">Belum ada QRIS</p>
+      {% endif %}
+    </div>
+    {% if qris_url %}
+      <p style="font-size:.7rem;color:var(--green);margin-top:.4rem;font-weight:700;">✓ QRIS Aktif</p>
+    {% else %}
+      <p style="font-size:.7rem;color:var(--text3);margin-top:.4rem;">Belum ada QRIS</p>
     {% endif %}
   </div>
-
   <div style="flex:1;min-width:220px;">
     <form method="POST" action="/admin/set-qris" enctype="multipart/form-data">
-      <div style="display:flex;gap:0.5rem;margin-bottom:0.85rem;">
+      <div style="display:flex;gap:.5rem;margin-bottom:.85rem;">
         <button type="button" class="mode-btn active" id="qbtn-url"  onclick="qMode('url')">🔗 URL</button>
-        <button type="button" class="mode-btn"        id="qbtn-file" onclick="qMode('file')">📁 Upload</button>
+        <button type="button" class="mode-btn"        id="qbtn-file" onclick="qMode('file')">📁 Upload File</button>
       </div>
       <div id="q-url">
-        <input type="text" name="qris_url" placeholder="https://... link gambar QRIS" style="margin-bottom:0.75rem;">
+        <input type="text" name="qris_url" placeholder="https://... link gambar QRIS" style="margin-bottom:.75rem;">
       </div>
       <div id="q-file" style="display:none;">
         <input type="file" name="qris_file" accept="image/*"
-          style="width:100%;padding:0.5rem;background:var(--surface2);border:1px solid var(--border);
-                 border-radius:10px;color:var(--text);margin-bottom:0.75rem;">
+          style="width:100%;padding:.5rem;background:var(--surface2);border:1px solid var(--border);
+                 border-radius:10px;color:var(--text);margin-bottom:.75rem;">
       </div>
       <button type="submit" class="btn btn-primary btn-sm">💾 Simpan QRIS</button>
     </form>
   </div>
 </div>
 
-{# ── TAMBAH BARANG ── #}
-<p class="section-title">➕ Tambah Barang Baru</p>
+<!-- ── REKENING BANK ── -->
+<p class="section-label">🏦 Rekening Bank Transfer</p>
 <div class="add-panel">
-  <form method="POST" action="/admin/tambah">
+  <form method="POST" action="/admin/tambah-rekening" style="margin-bottom:{% if data.rekening_bank %}1.5rem{% else %}0{% endif %};">
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+      <div class="form-group" style="flex:2;min-width:130px;margin:0;">
+        <label>Nama Bank</label>
+        <input type="text" name="bank" placeholder="BCA, BNI, Mandiri..." required>
+      </div>
+      <div class="form-group" style="flex:3;min-width:140px;margin:0;">
+        <label>Nomor Rekening</label>
+        <input type="text" name="nomor" placeholder="1234567890" required>
+      </div>
+      <div class="form-group" style="flex:2;min-width:130px;margin:0;">
+        <label>Atas Nama</label>
+        <input type="text" name="atas_nama" placeholder="Nama pemilik" required>
+      </div>
+      <div style="align-self:flex-end;padding-bottom:1.25rem;">
+        <button type="submit" class="btn btn-primary">+ Tambah</button>
+      </div>
+    </div>
+  </form>
+
+  {% if data.rekening_bank %}
+    <p class="section-label">Rekening tersimpan:</p>
+    {% for rek in data.rekening_bank %}
+    <div class="rek-card">
+      <div style="flex:1;">
+        <p style="font-family:var(--font-display);font-weight:700;color:var(--accent2);">{{ rek.bank }}</p>
+        <p style="font-family:monospace;font-size:1rem;">{{ rek.nomor }}</p>
+        <p style="font-size:.8rem;color:var(--text2);">a.n {{ rek.atas_nama }}</p>
+      </div>
+      <a href="/admin/hapus-rekening/{{ loop.index0 }}" class="btn btn-danger btn-sm"
+         onclick="return confirm('Hapus rekening ini?')">🗑️</a>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<!-- ── TAMBAH BARANG ── -->
+<p class="section-label">➕ Tambah Barang Baru</p>
+<div class="add-panel">
+  <form method="POST" action="/admin/tambah" enctype="multipart/form-data">
     <div style="display:flex;gap:1rem;flex-wrap:wrap;">
       <div class="form-group" style="flex:3;min-width:160px;margin:0;">
         <label>Nama Barang</label>
@@ -141,18 +154,18 @@
     </div>
     <div class="form-group" style="margin-top:1rem;">
       <label>Gambar Produk</label>
-      <div style="display:flex;gap:0.5rem;margin-bottom:0.6rem;">
+      <div style="display:flex;gap:.5rem;margin-bottom:.6rem;">
         <button type="button" class="mode-btn active" id="btn-url"  onclick="setMode('url')">🔗 URL</button>
-        <button type="button" class="mode-btn"        id="btn-file" onclick="setMode('lokal')">📁 Dari HP</button>
+        <button type="button" class="mode-btn"        id="btn-file" onclick="setMode('lokal')">📁 Upload</button>
       </div>
       <div id="mode-url">
         <input type="text" id="input-url" placeholder="https://... (opsional)" oninput="syncUrl(this.value)">
       </div>
       <div id="mode-lokal" style="display:none;">
-        <input type="file" id="input-file" accept="image/*" onchange="handleFile(this)"
-          style="width:100%;padding:0.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);">
+        <input type="file" id="input-file" name="gambar_file" accept="image/*" onchange="handleFile(this)"
+          style="width:100%;padding:.5rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);">
       </div>
-      <div id="img-preview" style="display:none;margin-top:0.75rem;">
+      <div id="img-preview" style="display:none;margin-top:.75rem;">
         <img id="img-prev-el" src="" style="width:80px;height:80px;object-fit:cover;border-radius:10px;border:1px solid var(--border);">
       </div>
       <input type="hidden" name="gambar" id="gambar-val">
@@ -161,86 +174,67 @@
   </form>
 </div>
 
-{# ── DAFTAR BARANG ── #}
-<p class="section-title">📦 Daftar Barang ({{ barang|length }} produk)</p>
+<!-- ── DAFTAR BARANG ── -->
+<p class="section-label">📦 Daftar Barang ({{ barang|length }} produk)</p>
 <div class="card">
   {% if not barang %}
-    <div style="text-align:center;padding:2rem;">
-      <p class="text-muted">Belum ada barang.</p>
-    </div>
+    <div style="text-align:center;padding:2rem;"><p class="text-muted">Belum ada barang.</p></div>
   {% else %}
-    <div>
-      {% for b in barang %}
-      <div class="prod-row">
-        {# Thumbnail #}
-        <div class="prod-thumb">
-          {% if b.gambar %}
-            <img src="{{ b.gambar }}" alt="{{ b.nama }}"
-                 onerror="this.parentElement.innerHTML='<span style=font-size:1.5rem>🛍️</span>'">
-          {% else %}<span style="font-size:1.5rem;">🛍️</span>{% endif %}
-        </div>
-
-        {# Info #}
-        <div style="flex:1;min-width:120px;">
-          <p style="font-weight:700;font-size:0.95rem;">{{ b.nama }}</p>
-          <p style="color:var(--accent);font-weight:700;font-size:0.9rem;">Rp{{ "{:,}".format(b.harga) }}</p>
-          <p style="font-size:0.78rem;margin-top:2px;">
-            <span class="stock-indicator" style="background:
-              {% if b.stok <= 0 %}var(--red)
-              {% elif b.stok <= 5 %}#f59e0b
-              {% elif b.stok <= 20 %}#fcd34d
-              {% else %}var(--green){% endif %};"></span>
-            Stok:
-            {% if b.stok <= 0 %}
-              <span style="color:var(--red);">Habis!</span>
-            {% elif b.stok <= 5 %}
-              <span style="color:#fcd34d;">{{ b.stok }} (Hampir Habis)</span>
-            {% else %}
-              <span class="text-muted">{{ b.stok }}</span>
-            {% endif %}
-          </p>
-        </div>
-
-        {# Aksi #}
-        <div style="display:flex;gap:0.5rem;flex-shrink:0;">
-          <a href="/admin/edit/{{ b.id }}" class="btn btn-secondary btn-sm">✏️ Edit</a>
-          <a href="/admin/hapus/{{ b.id }}" class="btn btn-danger btn-sm"
-             onclick="return confirm('Yakin hapus {{ b.nama }}?')">🗑️</a>
-        </div>
+    {% for b in barang %}
+    <div class="prod-row">
+      <div class="prod-thumb">
+        {% if b.gambar %}
+          <img src="{{ b.gambar }}" alt="{{ b.nama }}"
+               onerror="this.parentElement.innerHTML='<span style=font-size:1.5rem>🛍️</span>'">
+        {% else %}<span style="font-size:1.5rem;">🛍️</span>{% endif %}
       </div>
-      {% endfor %}
+      <div style="flex:1;min-width:120px;">
+        <p style="font-weight:700;font-size:.95rem;">{{ b.nama }}</p>
+        <p style="color:var(--accent2);font-family:var(--font-display);font-weight:700;font-size:.9rem;">Rp{{ "{:,}".format(b.harga) }}</p>
+        <p style="font-size:.78rem;margin-top:2px;">
+          <span class="stock-dot" style="background:{% if b.stok <= 0 %}var(--red){% elif b.stok <= 5 %}var(--gold){% else %}var(--green){% endif %};"></span>
+          Stok:
+          {% if b.stok <= 0 %}<span style="color:var(--red);">Habis!</span>
+          {% elif b.stok <= 5 %}<span style="color:var(--gold);">{{ b.stok }} (Hampir Habis)</span>
+          {% else %}<span class="text-muted">{{ b.stok }}</span>{% endif %}
+        </p>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-shrink:0;">
+        <a href="/admin/edit/{{ b.id }}" class="btn btn-secondary btn-sm">✏️ Edit</a>
+        <a href="/admin/hapus/{{ b.id }}" class="btn btn-danger btn-sm"
+           onclick="return confirm('Yakin hapus {{ b.nama }}?')">🗑️</a>
+      </div>
     </div>
+    {% endfor %}
   {% endif %}
 </div>
 
 <script>
 function qMode(m) {
-  document.getElementById('q-url').style.display  = m==='url'  ? 'block' : 'none';
-  document.getElementById('q-file').style.display = m==='file' ? 'block' : 'none';
-  document.getElementById('qbtn-url').className   = 'mode-btn' + (m==='url'  ? ' active' : '');
-  document.getElementById('qbtn-file').className  = 'mode-btn' + (m==='file' ? ' active' : '');
+  document.getElementById('q-url').style.display  = m==='url'  ? 'block':'none';
+  document.getElementById('q-file').style.display = m==='file' ? 'block':'none';
+  document.getElementById('qbtn-url').className   = 'mode-btn'+(m==='url'?' active':'');
+  document.getElementById('qbtn-file').className  = 'mode-btn'+(m==='file'?' active':'');
 }
 function setMode(m) {
   var u = m==='url';
-  document.getElementById('mode-url').style.display   = u ? 'block':'none';
-  document.getElementById('mode-lokal').style.display = u ? 'none':'block';
-  document.getElementById('btn-url').className  = 'mode-btn' + ( u ? ' active':'');
-  document.getElementById('btn-file').className = 'mode-btn' + (!u ? ' active':'');
+  document.getElementById('mode-url').style.display   = u?'block':'none';
+  document.getElementById('mode-lokal').style.display = u?'none':'block';
+  document.getElementById('btn-url').className  = 'mode-btn'+(u?' active':'');
+  document.getElementById('btn-file').className = 'mode-btn'+(!u?' active':'');
 }
 function syncUrl(v) {
   document.getElementById('gambar-val').value = v;
-  var p = document.getElementById('img-preview');
-  var i = document.getElementById('img-prev-el');
-  if (v) { i.src=v; p.style.display='block'; i.onerror=function(){p.style.display='none'}; }
-  else   { p.style.display='none'; }
+  var p=document.getElementById('img-preview'), i=document.getElementById('img-prev-el');
+  if(v){i.src=v;p.style.display='block';i.onerror=function(){p.style.display='none'};}
+  else{p.style.display='none';}
 }
 function handleFile(inp) {
-  if (!inp.files||!inp.files[0]) return;
-  var r = new FileReader();
-  r.onload = function(e) {
-    document.getElementById('gambar-val').value = e.target.result;
-    document.getElementById('img-prev-el').src  = e.target.result;
-    document.getElementById('img-preview').style.display = 'block';
+  if(!inp.files||!inp.files[0]) return;
+  var r=new FileReader();
+  r.onload=function(e){
+    document.getElementById('img-prev-el').src=e.target.result;
+    document.getElementById('img-preview').style.display='block';
   };
   r.readAsDataURL(inp.files[0]);
 }
