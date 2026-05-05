@@ -1,113 +1,43 @@
 {% extends "base.html" %}
-{% block title %}PYSTORE – Bayar QRIS{% endblock %}
+{% block title %}Bayar QRIS - PYSTORE{% endblock %}
 {% block content %}
-<div style="max-width:480px;margin:2rem auto;text-align:center;">
-  <div class="page-header" style="text-align:center;">
-    <p style="font-size:3rem;">📷</p>
-    <h1>Bayar via <span class="text-accent">QRIS</span></h1>
-    <p class="text-muted">Scan QR code di bawah lalu konfirmasi</p>
-  </div>
 
-  <div class="card" style="margin-bottom:1.5rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <span class="text-muted">Total yang harus dibayar</span>
-      <strong class="text-accent" style="font-size:1.5rem;">Rp{{ "{:,}".format(total) }}</strong>{% extends "base.html" %}
-{% block title %}PYSTORE – Bayar QRIS{% endblock %}
-{% block content %}
-<div style="max-width:480px;margin:2rem auto;text-align:center;">
-  <div class="page-header" style="text-align:center;">
-    <p style="font-size:3rem;">📱</p>
-    <h1>Bayar via <span class="text-accent">QRIS</span></h1>
-    <p class="text-muted">Scan QR code & bayar dengan aplikasi pilihanmu</p>
-  </div>
+<div style="max-width:480px;margin:2rem auto;padding:2rem;background:#1a1a1a;border-radius:12px;text-align:center;">
+    <h1 style="color:#f59e0b;margin-bottom:0.5rem;">📱 Bayar via QRIS</h1>
+    <p style="color:#888;margin-bottom:2rem;">Scan QR code di bawah</p>
 
-  <div class="card" style="margin-bottom:1.5rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <span class="text-muted">Total yang harus dibayar</span>
-      <strong class="text-accent" style="font-size:1.5rem;">Rp{{ "{:,}".format(total) }}</strong>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span class="text-muted">Order ID</span>
-      <span style="font-size:0.85rem;font-family:monospace;">{{ order_id }}</span>
-    </div>
-  </div>
-
-  <!-- QR Code -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <p style="font-weight:700;margin-bottom:1rem;">Scan QR Code di bawah:</p>
-    <div style="background:#fff;padding:1rem;border-radius:12px;display:inline-block;margin:0 auto;">
-      {% if qris_url %}
-        <img src="{{ qris_url }}" alt="QRIS" style="width:256px;height:256px;object-fit:contain;display:block;">
-      {% else %}
-        <div style="width:256px;height:256px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;border-radius:8px;">
-          <p style="color:#999;margin:0;">QRIS belum diatur</p>
+    <div style="background:#0f0f0f;padding:1.5rem;border-radius:8px;margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="color:#888;">Total</span>
+            <strong style="color:#f59e0b;font-size:1.3rem;">Rp{{ "{:,}".format(total) }}</strong>
         </div>
-      {% endif %}
+        <div style="display:flex;justify-content:space-between;">
+            <span style="color:#888;">Order ID</span>
+            <span style="font-family:monospace;font-size:0.9rem;">{{ order_id }}</span>
+        </div>
     </div>
-    <p class="text-muted" style="margin-top:1rem;font-size:0.85rem;">
-      <strong>Cara pembayaran:</strong><br>
-      1. Buka aplikasi GoPay / DANA / OVO / ShopeePay / Mobile Banking<br>
-      2. Pilih menu Scan QR<br>
-      3. Scan QR code di atas<br>
-      4. Masukkan nominal Rp{{ "{:,}".format(total) }}<br>
-      5. Selesaikan pembayaran
-    </p>
-  </div>
 
-  <!-- Konfirmasi -->
-  <div class="card" style="background:#1a1a10;border-color:#f59e0b;">
-    <p style="font-weight:700;margin-bottom:0.5rem;color:#f59e0b;">⚠️ Penting!</p>
-    <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">
-      Setelah transfer, klik tombol "Saya Sudah Bayar" di bawah. 
-      Admin akan memverifikasi pembayaran Anda.
+    <div style="background:#fff;padding:1rem;border-radius:12px;display:inline-block;margin-bottom:1.5rem;">
+        {% if qris_url %}
+            <img src="{{ qris_url }}" alt="QRIS" style="width:256px;height:256px;object-fit:contain;">
+        {% else %}
+            <div style="width:256px;height:256px;display:flex;align-items:center;justify-content:center;background:#f0f0f0;">
+                <p style="color:#999;margin:0;">QRIS belum diatur admin</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <p style="color:#888;font-size:0.9rem;margin-bottom:1.5rem;">
+        Buka GoPay/DANA/OVO/ShopeePay<br>Scan QR code di atas
     </p>
+
     <form method="POST" action="/konfirmasi-qris">
-      <input type="hidden" name="order_id" value="{{ order_id }}">
-      <input type="hidden" name="total" value="{{ total }}">
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.8rem;">
-        ✅ Saya Sudah Bayar
-      </button>
+        <button type="submit" style="width:100%;padding:1rem;background:#f59e0b;border:none;border-radius:8px;color:#000;font-weight:bold;cursor:pointer;margin-bottom:0.5rem;">
+            ✅ Saya Sudah Bayar
+        </button>
     </form>
-    <a href="/bayar" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:0.7rem;">
-      ← Ganti Metode Pembayaran
-    </a>
-  </div>
+
+    <a href="/bayar" style="display:block;padding:0.8rem;background:#333;color:#fff;text-decoration:none;border-radius:8px;">← Ganti Metode</a>
 </div>
+
 {% endblock %}
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span class="text-muted">Order ID</span>
-      <span style="font-size:0.85rem;">{{ order_id }}</span>
-    </div>
-  </div>
-
-  <!-- QR Code -->
-  <div class="card" style="margin-bottom:1.5rem;">
-    <p style="font-weight:700;margin-bottom:1rem;">Scan QR Code ini:</p>
-    <div style="background:#fff;padding:1rem;border-radius:12px;display:inline-block;">
-      <img src="{{ qris_url }}" alt="QRIS" style="width:240px;height:240px;object-fit:contain;display:block;">
-    </div>
-    <p class="text-muted" style="margin-top:1rem;font-size:0.82rem;">
-      Buka GoPay / DANA / OVO / ShopeePay / m-Banking<br>
-      lalu scan QR code di atas
-    </p>
-  </div>
-
-  <!-- Konfirmasi -->
-  <div class="card" style="background:#1a1a10;border-color:#3a3010;">
-    <p style="font-weight:700;margin-bottom:0.5rem;">Sudah transfer?</p>
-    <p class="text-muted" style="font-size:0.85rem;margin-bottom:1rem;">
-      Klik tombol di bawah setelah pembayaran berhasil. Admin akan memverifikasi pesananmu.
-    </p>
-    <form method="POST" action="/konfirmasi-qris">
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.8rem;">
-        ✅ Saya Sudah Bayar
-      </button>
-    </form>
-    <a href="/keranjang" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:0.7rem;">
-      ← Kembali ke Keranjang
-    </a>
-  </div>
-</div>
-{% endblock %}
-
