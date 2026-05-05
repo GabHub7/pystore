@@ -2,10 +2,10 @@
 {% block title %}PYSTORE – Pembayaran{% endblock %}
 {% block content %}
 
-<div style="max-width:480px;margin:2rem auto;text-align:center;">
-  <div class="page-header" style="text-align:center;">
+<div style="max-width:600px;margin:2rem auto;">
+  <div class="page-header" style="text-align:center;margin-bottom:2rem;">
     <p style="font-size:3rem;">💳</p>
-    <h1>Proses <span class="text-accent">Pembayaran</span></h1>
+    <h1>Pilih Metode <span class="text-accent">Pembayaran</span></h1>
     <p class="text-muted">Halo <strong>{{ pembeli }}</strong>, selesaikan pembayaran kamu</p>
   </div>
 
@@ -16,50 +16,65 @@
     </div>
   </div>
 
-  <button id="pay-button" class="btn btn-primary" style="width:100%;justify-content:center;padding:1rem;font-size:1rem;">
-    💳 Bayar Sekarang via Midtrans
-  </button>
+  <!-- Pilihan Metode Pembayaran -->
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+    
+    <!-- QRIS -->
+    <div class="card" style="cursor:pointer;border:2px solid #3a3a3a;transition:all 0.3s;" 
+         onclick="window.location.href='/bayar-qris'"
+         onmouseover="this.style.borderColor='#f59e0b';this.style.background='#1a1a10'"
+         onmouseout="this.style.borderColor='#3a3a3a';this.style.background='transparent'">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="font-size:2.5rem;">📱</div>
+        <div style="flex:1;">
+          <h3 style="margin:0;color:#f59e0b;">QRIS</h3>
+          <p class="text-muted" style="margin:0.3rem 0 0 0;font-size:0.85rem;">
+            Scan QR code & bayar dengan GoPay, DANA, OVO, ShopeePay, atau Mobile Banking
+          </p>
+        </div>
+        <div style="font-size:1.5rem;">→</div>
+      </div>
+    </div>
 
-  <p class="text-muted" style="margin-top:1rem;font-size:0.8rem;">
-    Didukung: GoPay, DANA, OVO, ShopeePay, QRIS, Transfer Bank, dan lainnya
-  </p>
+    <!-- Transfer Bank -->
+    <div class="card" style="cursor:pointer;border:2px solid #3a3a3a;transition:all 0.3s;"
+         onclick="window.location.href='/bayar-transfer'"
+         onmouseover="this.style.borderColor='#f59e0b';this.style.background='#1a1a10'"
+         onmouseout="this.style.borderColor='#3a3a3a';this.style.background='transparent'">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="font-size:2.5rem;">🏦</div>
+        <div style="flex:1;">
+          <h3 style="margin:0;color:#f59e0b;">Transfer Bank</h3>
+          <p class="text-muted" style="margin:0.3rem 0 0 0;font-size:0.85rem;">
+            Transfer manual ke rekening bank kami (BCA, BNI, Mandiri, BRI)
+          </p>
+        </div>
+        <div style="font-size:1.5rem;">→</div>
+      </div>
+    </div>
 
-  <a href="/keranjang" class="btn btn-secondary" style="margin-top:0.5rem;width:100%;justify-content:center;">
+    <!-- COD -->
+    <div class="card" style="cursor:pointer;border:2px solid #3a3a3a;transition:all 0.3s;"
+         onclick="window.location.href='/bayar-cod'"
+         onmouseover="this.style.borderColor='#f59e0b';this.style.background='#1a1a10'"
+         onmouseout="this.style.borderColor='#3a3a3a';this.style.background='transparent'">
+      <div style="display:flex;align-items:center;gap:1rem;">
+        <div style="font-size:2.5rem;">💵</div>
+        <div style="flex:1;">
+          <h3 style="margin:0;color:#f59e0b;">COD (Bayar di Tempat)</h3>
+          <p class="text-muted" style="margin:0.3rem 0 0 0;font-size:0.85rem;">
+            Bayar tunai saat barang diterima di lokasi Anda
+          </p>
+        </div>
+        <div style="font-size:1.5rem;">→</div>
+      </div>
+    </div>
+
+  </div>
+
+  <a href="/keranjang" class="btn btn-secondary" style="margin-top:1.5rem;width:100%;justify-content:center;">
     ← Kembali ke Keranjang
   </a>
 </div>
-
-<script src="{{ snap_url }}" data-client-key="{{ client_key }}"></script>
-<script>
-document.getElementById('pay-button').onclick = function() {
-  snap.pay('{{ snap_token }}', {
-    onSuccess: function(result) {
-      fetch('/payment-success', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result)
-      }).then(function() {
-        window.location.href = '/struk';
-      });
-    },
-    onPending: function(result) {
-      fetch('/payment-success', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(result)
-      }).then(function() {
-        window.location.href = '/struk';
-      });
-    },
-    onError: function(result) {
-      alert('Pembayaran gagal! Silakan coba lagi.');
-      window.location.href = '/keranjang';
-    },
-    onClose: function() {
-      alert('Kamu menutup popup pembayaran sebelum selesai.');
-    }
-  });
-};
-</script>
 
 {% endblock %}
