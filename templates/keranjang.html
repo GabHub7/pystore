@@ -1,55 +1,40 @@
 {% extends "base.html" %}
-{% block title %}PYSTORE – Keranjang{% endblock %}
+{% block title %}Keranjang – PYSTORE{% endblock %}
 {% block head %}
 <style>
-  .cart-layout {
-    display: grid;
-    grid-template-columns: 1fr 360px;
-    gap: 1.5rem;
-    align-items: start;
-  }
-  @media(max-width:768px) {
-    .cart-layout { grid-template-columns:1fr; }
-  }
-  .cart-item {
-    display:flex; align-items:center; gap:1rem;
-    padding:1rem 0; border-bottom:1px solid var(--border);
-  }
-  .cart-item:last-child { border-bottom:none; }
-  .cart-item-img {
-    width:64px; height:64px; border-radius:10px;
-    overflow:hidden; background:var(--surface2); flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .cart-item-img img { width:100%; height:100%; object-fit:cover; }
-  .cart-item-name { font-weight:700; font-size:0.95rem; }
-  .cart-item-price { color:var(--text2); font-size:0.85rem; margin-top:2px; }
-  .cart-item-sub { color:var(--accent); font-weight:700; font-size:1rem; margin-left:auto; flex-shrink:0; }
+.cart-layout {
+  display:grid; grid-template-columns:1fr 360px; gap:1.5rem; align-items:start;
+}
+@media(max-width:768px){ .cart-layout{ grid-template-columns:1fr; } }
+.cart-item {
+  display:flex; align-items:center; gap:1rem;
+  padding:1rem 0; border-bottom:1px solid var(--border);
+}
+.cart-item:last-child{ border-bottom:none; }
+.cart-img {
+  width:68px; height:68px; border-radius:12px;
+  overflow:hidden; background:var(--surface2); flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+}
+.cart-img img{ width:100%; height:100%; object-fit:cover; }
+.cart-name { font-weight:600; font-size:.95rem; }
+.cart-price{ color:var(--text2); font-size:.85rem; margin-top:2px; }
+.cart-sub  { font-family:var(--font-display); color:var(--accent2); font-weight:700; font-size:1rem; margin-left:auto; flex-shrink:0; }
 
-  /* Payment method cards */
-  .metode-option {
-    display:flex; align-items:center; gap:0.85rem;
-    padding:0.9rem 1rem;
-    background:var(--surface2); border:2px solid var(--border);
-    border-radius:12px; cursor:pointer;
-    transition:border-color .18s, background .18s;
-    margin-bottom:0.6rem;
-  }
-  .metode-option:last-child { margin-bottom:0; }
-  .metode-option.active {
-    border-color:var(--accent);
-    background:var(--accent-dim);
-  }
-  .metode-option input[type=radio] { accent-color:var(--accent); width:17px; height:17px; flex-shrink:0; }
-  .metode-title { font-weight:700; font-size:0.9rem; margin-bottom:2px; }
-  .metode-desc  { font-size:0.75rem; color:var(--text2); }
+.metode-option {
+  display:flex; align-items:center; gap:.85rem;
+  padding:.9rem 1rem;
+  background:var(--surface2); border:2px solid var(--border);
+  border-radius:12px; cursor:pointer; transition:border-color .18s, background .18s;
+  margin-bottom:.6rem;
+}
+.metode-option:last-child{ margin-bottom:0; }
+.metode-option.active { border-color:var(--accent); background:var(--accent-dim); }
+.metode-option input[type=radio]{ accent-color:var(--accent); width:17px; height:17px; flex-shrink:0; }
+.metode-title { font-weight:700; font-size:.9rem; margin-bottom:2px; font-family:var(--font-display); }
+.metode-desc  { font-size:.75rem; color:var(--text2); }
 
-  .summary-row {
-    display:flex; justify-content:space-between; align-items:center;
-    padding:0.5rem 0;
-  }
-  .summary-row + .summary-row { border-top:1px solid var(--border); }
-  .summary-total { font-size:1.5rem; font-weight:800; color:var(--accent); font-family:'Fraunces',serif; }
+.summary-total { font-family:var(--font-display); font-size:1.5rem; font-weight:800; color:var(--accent2); }
 </style>
 {% endblock %}
 {% block content %}
@@ -63,110 +48,100 @@
   <div class="card" style="text-align:center;padding:4rem 2rem;">
     <div style="font-size:3.5rem;margin-bottom:1rem;">🛒</div>
     <h3>Keranjang Masih Kosong</h3>
-    <p class="text-muted" style="margin-top:0.4rem;">Yuk tambahkan produk favoritmu!</p>
+    <p class="text-muted" style="margin-top:.4rem;">Yuk tambahkan produk favoritmu!</p>
     <a href="/" class="btn btn-primary" style="margin-top:1.5rem;">Lihat Produk</a>
   </div>
-
 {% else %}
-  {% set total = keranjang | sum(attribute='subtotal') %}
   <div class="cart-layout">
 
-    {# ── KOLOM KIRI: item list ── #}
+    <!-- KIRI: item list -->
     <div class="card" style="padding:0 1.5rem;">
       {% for item in keranjang %}
         <div class="cart-item">
-          <div class="cart-item-img">
+          <div class="cart-img">
             {% if item.gambar %}
-              <img src="{{ item.gambar }}" alt="{{ item.nama }}"
-                   onerror="this.style.display='none'">
+              <img src="{{ item.gambar }}" alt="{{ item.nama }}" onerror="this.style.display='none'">
             {% else %}
               <span style="font-size:1.5rem;">🛍️</span>
             {% endif %}
           </div>
           <div style="flex:1;min-width:0;">
-            <p class="cart-item-name">{{ item.nama }}</p>
-            <p class="cart-item-price">Rp{{ "{:,}".format(item.harga) }} × {{ item.jumlah }}</p>
+            <p class="cart-name">{{ item.nama }}</p>
+            <p class="cart-price">Rp{{ "{:,}".format(item.harga) }} × {{ item.jumlah }}</p>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.5rem;flex-shrink:0;">
-            <span class="cart-item-sub">Rp{{ "{:,}".format(item.subtotal) }}</span>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.5rem;flex-shrink:0;">
+            <span class="cart-sub">Rp{{ "{:,}".format(item.subtotal) }}</span>
             <a href="/hapus-keranjang/{{ item.id }}" class="btn btn-danger btn-sm">Hapus</a>
           </div>
         </div>
       {% endfor %}
-
       <div style="padding:1rem 0;">
         <a href="/" class="btn btn-outline btn-sm">+ Tambah Produk Lagi</a>
       </div>
     </div>
 
-    {# ── KOLOM KANAN: ringkasan & pembayaran ── #}
+    <!-- KANAN: ringkasan -->
     <div style="position:sticky;top:76px;">
       <div class="card">
         <h3 style="margin-bottom:1.25rem;">Ringkasan & Pembayaran</h3>
-
-        {# Total #}
-        <div class="summary-row">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
           <span class="text-muted">Subtotal ({{ keranjang|length }} item)</span>
           <span class="summary-total">Rp{{ "{:,}".format(total) }}</span>
         </div>
+        <hr style="border:none;border-top:1px solid var(--border);margin-bottom:1rem;">
 
-        <hr style="border:none;border-top:1px solid var(--border);margin:1rem 0;">
-
-        {# Metode pembayaran #}
         <form method="POST" action="/pilih-bayar" id="form-bayar">
-          <p style="font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;
-                    letter-spacing:.07em;margin-bottom:0.75rem;">Metode Pembayaran</p>
-
-          <label class="metode-option active" id="lbl-midtrans" onclick="pilih('midtrans')">
-            <input type="radio" name="metode" value="midtrans" checked>
-            <div>
-              <p class="metode-title">💳 Bayar Online</p>
-              <p class="metode-desc">GoPay, DANA, OVO, Transfer Bank, QRIS Dinamis</p>
-            </div>
-          </label>
+          <p class="section-label" style="margin-bottom:.75rem;">Metode Pembayaran</p>
 
           {% if qris_tersedia %}
           <label class="metode-option" id="lbl-qris" onclick="pilih('qris')">
             <input type="radio" name="metode" value="qris">
             <div>
-              <p class="metode-title">📷 QRIS Statis</p>
+              <p class="metode-title">📷 QRIS</p>
               <p class="metode-desc">Scan QR code lalu konfirmasi ke admin</p>
             </div>
           </label>
           {% endif %}
 
-          <label class="metode-option" id="lbl-cod" onclick="pilih('cod')">
-            <input type="radio" name="metode" value="cod">
+          <label class="metode-option" id="lbl-transfer" onclick="pilih('transfer')">
+            <input type="radio" name="metode" value="transfer">
             <div>
-              <p class="metode-title">🚚 COD (Bayar di Tempat)</p>
+              <p class="metode-title">🏦 Transfer Bank</p>
+              <p class="metode-desc">Transfer ke BCA, BNI, Mandiri, BRI, dst.</p>
+            </div>
+          </label>
+
+          <label class="metode-option active" id="lbl-cod" onclick="pilih('cod')">
+            <input type="radio" name="metode" value="cod" checked>
+            <div>
+              <p class="metode-title">💵 COD (Bayar di Tempat)</p>
               <p class="metode-desc">Bayar tunai saat barang diterima</p>
             </div>
           </label>
 
           <button type="submit" id="btn-checkout" class="btn btn-primary btn-full btn-lg" style="margin-top:1rem;">
-            💳 Lanjut Bayar Online
+            🚚 Lanjut Order COD
           </button>
         </form>
       </div>
     </div>
-
   </div>
 {% endif %}
 
 <script>
-var labels = {
-  midtrans: { el:'lbl-midtrans', text:'💳 Lanjut Bayar Online' },
+var cfg = {
   qris:     { el:'lbl-qris',     text:'📷 Lanjut Bayar QRIS' },
+  transfer: { el:'lbl-transfer', text:'🏦 Lanjut Transfer Bank' },
   cod:      { el:'lbl-cod',      text:'🚚 Lanjut Order COD' }
 };
 function pilih(m) {
-  Object.keys(labels).forEach(function(k) {
-    var el = document.getElementById(labels[k].el);
+  Object.keys(cfg).forEach(function(k){
+    var el = document.getElementById(cfg[k].el);
     if (!el) return;
-    el.classList.toggle('active', k === m);
-    el.querySelector('input').checked = k === m;
+    el.classList.toggle('active', k===m);
+    el.querySelector('input').checked = k===m;
   });
-  if (labels[m]) document.getElementById('btn-checkout').innerHTML = labels[m].text;
+  document.getElementById('btn-checkout').innerHTML = cfg[m] ? cfg[m].text : 'Lanjut Bayar';
 }
 </script>
 {% endblock %}
