@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}COD – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.pay-wrap {
+  max-width:520px; margin:2.5rem auto;
+}
+.pay-header {
+  text-align:center; margin-bottom:2rem;
+}
+.pay-icon {
+  width:72px; height:72px; border-radius:20px;
+  background:var(--gold-dim); border:1px solid rgba(240,180,41,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:2rem; margin:0 auto 1.25rem;
+}
+.summary-box {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:14px; padding:1.25rem; margin-bottom:1.5rem;
+}
+.summary-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:0.4rem 0;
+}
+.summary-row + .summary-row { border-top:1px solid var(--border); padding-top:0.8rem; margin-top:0.4rem; }
+.total-amount {
+  font-family:var(--font-display); font-size:1.6rem; font-weight:800; color:var(--gold);
+}
+.info-box {
+  background:var(--gold-dim); border:1px solid rgba(240,180,41,.2);
+  border-radius:14px; padding:1.1rem 1.25rem; margin-bottom:1.5rem;
+}
+.info-box ul { padding-left:1.2rem; margin-top:0.5rem; }
+.info-box li { color:var(--text2); font-size:0.875rem; margin-bottom:0.3rem; }
+.form-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.5rem; margin-bottom:1.25rem;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div class="pay-wrap">
+  <div class="pay-header">
+    <div class="pay-icon">💵</div>
+    <h1>Bayar di <span class="accent">Tempat</span></h1>
+    <p class="text-muted" style="margin-top:.4rem;">Bayar tunai saat barang tiba di tanganmu</p>
+  </div>
+
+  <div class="summary-box">
+    <div class="summary-row">
+      <span class="text-muted">Order ID</span>
+      <span style="font-family:monospace;font-size:.85rem;color:var(--text2);">{{ order_id }}</span>
+    </div>
+    <div class="summary-row">
+      <span class="text-muted">Pembeli</span>
+      <strong>{{ pembeli }}</strong>
+    </div>
+    <div class="summary-row">
+      <span class="text-muted">Total COD</span>
+      <span class="total-amount">Rp{{ "{:,}".format(total) }}</span>
+    </div>
+  </div>
+
+  <div class="info-box">
+    <p style="color:var(--gold);font-weight:700;font-size:.875rem;">📦 Syarat & Ketentuan COD</p>
+    <ul>
+      <li>Bayar tunai langsung ke kurir saat barang tiba</li>
+      <li>Periksa kondisi barang sebelum membayar</li>
+      <li>Jangkauan area COD akan dikonfirmasi admin</li>
+      <li>Siapkan uang pas untuk mempermudah transaksi</li>
+    </ul>
+  </div>
+
+  <div class="form-card">
+    <h3 style="margin-bottom:1.25rem;">📍 Info Pengiriman</h3>
+    <form method="POST" action="/konfirmasi-cod">
+      <div class="form-group">
+        <label>Nama Penerima</label>
+        <input type="text" name="nama_penerima" placeholder="Nama lengkap penerima" required value="{{ pembeli }}">
+      </div>
+      <div class="form-group">
+        <label>No. Telepon</label>
+        <input type="tel" name="telepon" placeholder="08xx-xxxx-xxxx" required>
+      </div>
+      <div class="form-group">
+        <label>Alamat Lengkap</label>
+        <textarea name="alamat" placeholder="Jl. contoh No.1, RT/RW, Kelurahan, Kecamatan, Kota..." required></textarea>
+      </div>
+      <div class="form-group">
+        <label>Catatan (opsional)</label>
+        <input type="text" name="catatan" placeholder="Patokan atau instruksi khusus...">
+      </div>
+      <button type="submit" class="btn btn-primary btn-full btn-lg" style="background:var(--gold);color:#000;box-shadow:0 0 24px rgba(240,180,41,.3);margin-bottom:.75rem;">
+        ✅ Konfirmasi Pesanan COD
+      </button>
+    </form>
+  </div>
+
+  <a href="/keranjang" class="btn btn-ghost btn-full" style="border:1px solid var(--border);">← Ganti Metode Pembayaran</a>
+</div>
+{% endblock %}
