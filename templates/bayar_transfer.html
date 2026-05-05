@@ -1,89 +1,49 @@
 {% extends "base.html" %}
-{% block title %}PYSTORE – Transfer Bank{% endblock %}
+{% block title %}Transfer Bank - PYSTORE{% endblock %}
 {% block content %}
-<div style="max-width:480px;margin:2rem auto;text-align:center;">
-  <div class="page-header" style="text-align:center;">
-    <p style="font-size:3rem;">🏦</p>
-    <h1>Transfer <span class="text-accent">Bank</span></h1>
-    <p class="text-muted">Transfer ke rekening bank kami</p>
-  </div>
 
-  <div class="card" style="margin-bottom:1.5rem;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-      <span class="text-muted">Total yang harus dibayar</span>
-      <strong class="text-accent" style="font-size:1.5rem;">Rp{{ "{:,}".format(total) }}</strong>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <span class="text-muted">Order ID</span>
-      <span style="font-size:0.85rem;font-family:monospace;">{{ order_id }}</span>
-    </div>
-  </div>
+<div style="max-width:480px;margin:2rem auto;padding:2rem;background:#1a1a1a;border-radius:12px;">
+    <h1 style="color:#f59e0b;text-align:center;margin-bottom:0.5rem;">🏦 Transfer Bank</h1>
+    <p style="color:#888;text-align:center;margin-bottom:2rem;">Transfer ke rekening berikut</p>
 
-  <!-- Info Rekening -->
-  <div class="card" style="margin-bottom:1.5rem;text-align:left;">
-    <p style="font-weight:700;margin-bottom:1rem;text-align:center;">📋 Informasi Rekening</p>
-    
+    <div style="background:#0f0f0f;padding:1.5rem;border-radius:8px;margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.5rem;">
+            <span style="color:#888;">Total</span>
+            <strong style="color:#f59e0b;font-size:1.3rem;">Rp{{ "{:,}".format(total) }}</strong>
+        </div>
+        <div style="display:flex;justify-content:space-between;">
+            <span style="color:#888;">Order ID</span>
+            <span style="font-family:monospace;font-size:0.9rem;">{{ order_id }}</span>
+        </div>
+    </div>
+
     {% if rekening %}
-      {% for bank in rekening %}
-      <div style="background:#1a1a1a;padding:1rem;border-radius:8px;margin-bottom:0.8rem;border-left:4px solid #f59e0b;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-          <strong style="color:#f59e0b;">{{ bank.nama_bank }}</strong>
-          <span style="font-size:0.8rem;color:#888;">{{ bank.atas_nama }}</span>
+        {% for bank in rekening %}
+        <div style="background:#0f0f0f;padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:4px solid #f59e0b;">
+            <strong style="color:#f59e0b;">{{ bank.nama_bank or bank.bank }}</strong><br>
+            <span style="font-family:monospace;font-size:1.1rem;">{{ bank.nomor_rekening or bank.nomor }}</span><br>
+            <small style="color:#888;">a.n {{ bank.atas_nama or bank.atas_nama }}</small>
         </div>
-        <div style="font-family:monospace;font-size:1.1rem;letter-spacing:2px;">
-          {{ bank.nomor_rekening }}
-        </div>
-      </div>
-      {% endfor %}
+        {% endfor %}
     {% else %}
-      <div style="background:#1a1a1a;padding:1rem;border-radius:8px;text-align:center;">
-        <p style="color:#888;margin:0;">Rekening bank belum diatur oleh admin</p>
-      </div>
+        <p style="color:#888;text-align:center;">Rekening belum diatur admin</p>
     {% endif %}
-  </div>
 
-  <!-- Instruksi -->
-  <div class="card" style="margin-bottom:1.5rem;text-align:left;">
-    <p style="font-weight:700;margin-bottom:0.8rem;">📝 Cara Transfer:</p>
-    <ol style="margin:0;padding-left:1.5rem;color:#aaa;font-size:0.9rem;line-height:1.8;">
-      <li>Pilih salah satu rekening di atas</li>
-      <li>Transfer sesuai nominal <strong style="color:#f59e0b;">Rp{{ "{:,}".format(total) }}</strong></li>
-      <li>Simpan bukti transfer</li>
-      <li>Klik tombol "Saya Sudah Transfer" di bawah</li>
-      <li>Upload bukti transfer (opsional)</li>
-    </ol>
-  </div>
-
-  <!-- Form Konfirmasi -->
-  <div class="card" style="background:#1a1a10;border-color:#f59e0b;">
-    <form method="POST" action="/konfirmasi-transfer" enctype="multipart/form-data">
-      <input type="hidden" name="order_id" value="{{ order_id }}">
-      <input type="hidden" name="total" value="{{ total }}">
-      
-      <div style="margin-bottom:1rem;text-align:left;">
-        <label style="display:block;margin-bottom:0.5rem;font-weight:600;">Bank yang digunakan:</label>
-        <select name="bank_pengirim" required style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #3a3a3a;background:#1a1a1a;color:#fff;">
-          <option value="">Pilih Bank</option>
-          <option value="BCA">BCA</option>
-          <option value="BNI">BNI</option>
-          <option value="Mandiri">Mandiri</option>
-          <option value="BRI">BRI</option>
-          <option value="Lainnya">Lainnya</option>
+    <form method="POST" action="/konfirmasi-transfer" style="margin-top:1.5rem;">
+        <select name="bank_pengirim" required style="width:100%;padding:0.8rem;margin-bottom:1rem;border-radius:8px;border:1px solid #333;background:#0f0f0f;color:#fff;">
+            <option value="">Bank yang Anda gunakan</option>
+            <option value="BCA">BCA</option>
+            <option value="BNI">BNI</option>
+            <option value="Mandiri">Mandiri</option>
+            <option value="BRI">BRI</option>
         </select>
-      </div>
-
-      <div style="margin-bottom:1rem;text-align:left;">
-        <label style="display:block;margin-bottom:0.5rem;font-weight:600;">Upload Bukti Transfer (Opsional):</label>
-        <input type="file" name="bukti_transfer" accept="image/*" style="width:100%;padding:0.7rem;border-radius:8px;border:1px solid #3a3a3a;background:#1a1a1a;color:#fff;">
-      </div>
-
-      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:0.8rem;">
-        ✅ Saya Sudah Transfer
-      </button>
+        
+        <button type="submit" style="width:100%;padding:1rem;background:#f59e0b;border:none;border-radius:8px;color:#000;font-weight:bold;cursor:pointer;">
+            ✅ Saya Sudah Transfer
+        </button>
     </form>
-    <a href="/bayar" class="btn btn-secondary" style="width:100%;justify-content:center;margin-top:0.7rem;">
-      ← Ganti Metode Pembayaran
-    </a>
-  </div>
+
+    <a href="/bayar" style="display:block;text-align:center;margin-top:0.5rem;padding:0.8rem;background:#333;color:#fff;text-decoration:none;border-radius:8px;">← Ganti Metode</a>
 </div>
+
 {% endblock %}
