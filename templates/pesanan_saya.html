@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% block title %}Pesanan Saya – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.order-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:1.25rem;overflow:hidden;}
+.order-head{display:flex;align-items:flex-start;justify-content:space-between;padding:1rem 1.25rem;background:var(--surface2);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.75rem;}
+.order-body{padding:1.25rem;}
+.item-row{display:flex;justify-content:space-between;align-items:center;padding:.45rem 0;font-size:.875rem;border-bottom:1px solid var(--border);}
+.item-row:last-child{border-bottom:none;}
+
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem;max-width:480px;width:100%;animation:fadeDown .25s ease;}
+.modal h3{margin-bottom:1.25rem;}
+.alasan-chip{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;}
+.chip{padding:.4rem .9rem;border-radius:20px;font-size:.8rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all .18s;}
+.chip.selected{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* Notif batal */
+.notif-batal{border-radius:12px;padding:.85rem 1.1rem;font-size:.875rem;margin-top:.75rem;}
+.notif-pending{background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);color:#fcd34d;}
+.notif-setuju{background:var(--red-dim);border:1px solid rgba(248,113,113,.2);color:#fca5a5;}
+.notif-tolak{background:var(--blue-dim);border:1px solid rgba(96,165,250,.2);color:#93c5fd;}
+</style>
+{% endblock %}
+{% block content %}
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+  <div>
+    <h1>Pesanan <span class="accent">Saya</span></h1>
+    <p class="text-muted">Halo <strong>{{ pembeli }}</strong> — {{ pesanan|length }} pesanan ditemukan</p>
+  </div>
+  <a href="/" class="btn btn-secondary">← Belanja Lagi</a>
+</div>
+
+{% if not pesanan %}
+  <div class="card" style="text-align:center;padding:4rem 2rem;">
+    <p style="font-size:3rem;margin-bottom:1rem;">🛍️</p>
+    <h3>Belum Ada Pesanan</h3>
+    <p class="text-muted" style="margin-top:.4rem;">Yuk belanja dulu!</p>
+    <a href="/" class="btn btn-primary" style="margin-top:1.5rem;">Lihat Produk</a>
+  </div>
+{% else %}
+  {% for p in pesanan %}
+  <div class="order-card">
+    <div class="order-head">
+      <div>
+        <p style="font-family:monospace;font-size:.8rem;color:var(--text3);">{{ p.order_id }}</p>
+        <p style="font-weight:700;font-size:1rem;margin-top:2px;">{{ p.metode }}</p>
+        <p style="font-size:.78rem;color:var(--text3);margin-top:2px;">🕐 {{ p.tanggal }}</p>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.4rem;">
+        {# STATUS BADGE #}
+        {% if p.status == 'Dibatalkan' %}
+          <span class="badge badge-red">❌ {{ p.status }}</span>
+        {% elif p.status == 'Selesai' %}
+          <span class="badge badge-green">✅ {{ p.status }}</span>
+        {% elif p.status == 'Dikirim' %}
+          <span class="badge badge-blue">🚚 {{ p.status }}</span>
+        {% elif p.status == 'Diproses' %}
+          <span class="badge badge-purple">⚙️ {{ p.status }}</span>
+        {% elif p.status == 'Permintaan Batal' %}
+          <span class="badge badge-amber">⏳ Menunggu Keputusan Admin</span>
+        {% else %}
+          <span class="badge badge-gray">{{ p.status }}</span>
+        {% endif %}
+        <p style="font-family:var(--font-display);font-weight:800;color:var(--accent2);">Rp{{ "{:,}".format(p.total) }}</p>
+      </div>
+    </div>
+
+    <div class="order-body">
+      {# DAFTAR PRODUK #}
+      {% set produk_list = p.produk if p.produk is defined else [] %}
+      {% for item in produk_list %}
+      <div class="item-row">
+        <span style="font-weight:500;">{{ item.nama }}</span>
+        <span class="text-muted">×{{ item.jumlah }}</span>
+        <span>Rp{{ "{:,}".format(item.subtotal) }}</span>
+      </div>
+      {% endfor %}
+
+      {# INFO PENGIRIMAN COD #}
+      {% if p.metode == 'COD' and p.nama_penerima %}
+      <div style="margin-top:.75rem;font-size:.85rem;color:var(--text2);">
+        📦 Kirim ke: <strong style="color:var(--text);">{{ p.nama_penerima }}</strong> — {{ p.alamat }}
+      </div>
+      {% endif %}
+
+      {# NOTIFIKASI STATUS PEMBATALAN #}
+      {% if p.status == 'Permintaan Batal' %}
+      <div class="notif-batal notif-pending">
+        ⏳ <strong>Permintaan batal sedang diproses admin.</strong><br>
+        <span style="font-size:.8rem;">Alasan: {{ p.alasan_batal }}</span>
+      </div>
+      {% elif p.keputusan_batal == 'setuju' %}
+      <div class="notif-batal notif-setuju">
+        ❌ <strong>Pembatalan disetujui admin.</strong> Pesanan ini telah dibatalkan.
+      </div>
+      {% elif p.keputusan_batal == 'tolak' %}
+      <div class="notif-batal notif-tolak">
+        🚫 <strong>Permintaan batal ditolak admin.</strong><br>
+        {% if p.alasan_tolak_batal %}
+        <span style="font-size:.8rem;">Alasan admin: {{ p.alasan_tolak_batal }}</span>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      {# TOMBOL AJUKAN BATAL #}
+      {% if p.status not in ['Dikirim','Selesai','Dibatalkan','Permintaan Batal'] %}
+      <div style="margin-top:1rem;">
+        <button class="btn btn-danger btn-sm"
+                onclick="bukaModalBatal('{{ p.order_id }}')">
+          🚫 Ajukan Pembatalan
+        </button>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+
+{# ── MODAL PEMBATALAN ── #}
+<div class="modal-overlay" id="modal-batal">
+  <div class="modal">
+    <h3>🚫 Ajukan <span class="accent">Pembatalan</span></h3>
+    <p class="text-muted" style="margin-bottom:1.25rem;font-size:.875rem;">
+      Pilih alasan pembatalan. Kamu juga bisa menambahkan pesan.
+    </p>
+
+    <form method="POST" id="form-batal" action="">
+      <div class="form-group">
+        <label>Alasan Pembatalan</label>
+        <div class="alasan-chip">
+          {% set alasan_list = [
+            'Salah pesan produk',
+            'Ingin ganti metode bayar',
+            'Barang tidak dibutuhkan lagi',
+            'Menemukan harga lebih murah',
+            'Pesanan terlalu lama diproses',
+            'Lainnya'
+          ] %}
+          {% for a in alasan_list %}
+          <div class="chip" onclick="pilihAlasan(this, '{{ a }}')">{{ a }}</div>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="alasan_pilihan" id="alasan_pilihan" required>
+      </div>
+
+      <div class="form-group">
+        <label>Pesan Tambahan (opsional)</label>
+        <textarea name="alasan_chat" placeholder="Ceritakan lebih detail jika perlu..." style="min-height:80px;"></textarea>
+      </div>
+
+      <div style="display:flex;gap:.75rem;margin-top:.5rem;">
+        <button type="submit" class="btn btn-danger" id="btn-kirim-batal" disabled>
+          Kirim Permintaan
+        </button>
+        <button type="button" class="btn btn-secondary" onclick="tutupModal()">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function bukaModalBatal(orderId) {
+  document.getElementById('form-batal').action = '/ajukan-batal/' + orderId;
+  document.getElementById('alasan_pilihan').value = '';
+  document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('selected'); });
+  document.getElementById('btn-kirim-batal').disabled = true;
+  document.getElementById('modal-batal').classList.add('open');
+}
+function tutupModal() {
+  document.getElementById('modal-batal').classList.remove('open');
+}
+function pilihAlasan(el, val) {
+  document.querySelectorAll('.chip').forEach(function(c){ c.classList.remove('selected'); });
+  el.classList.add('selected');
+  document.getElementById('alasan_pilihan').value = val;
+  document.getElementById('btn-kirim-batal').disabled = false;
+}
+document.getElementById('modal-batal').addEventListener('click', function(e){
+  if(e.target === this) tutupModal();
+});
+</script>
+{% endblock %}
