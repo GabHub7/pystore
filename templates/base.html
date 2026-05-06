@@ -143,6 +143,7 @@
         {% set n = session.get('keranjang', [])|length %}
         {% if n > 0 %}<span class="cart-badge">{{ n }}</span>{% endif %}
       </a>
+      <a href="/pesanan-saya" class="nb">📦 Pesanan Saya</a>
       <a href="/logout-pembeli" class="nb">
         👤 {{ session.pembeli_nama[:14] }}
       </a>
