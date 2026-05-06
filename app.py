@@ -415,3 +415,70 @@ def update_status(order_id):
 
 if __name__ == '__main__':
     app.run(debug=True)
+
+# ── RIWAYAT PESANAN USER ───────────────────────────────────────────────────────
+@app.route('/pesanan-saya')
+def pesanan_saya():
+    if 'pembeli_nama' not in session:
+        return redirect(url_for('login_pembeli'))
+    data    = load_data()
+    pembeli = session['pembeli_nama']
+    # Filter pesanan milik user ini
+    my_orders = [p for p in data.get('pesanan', []) if p.get('pembeli') == pembeli]
+    my_orders = list(reversed(my_orders))  # terbaru dulu
+    return render_template('pesanan_saya.html', pesanan=my_orders, pembeli=pembeli)
+
+# ── AJUKAN PEMBATALAN ──────────────────────────────────────────────────────────
+@app.route('/ajukan-batal/<order_id>', methods=['POST'])
+def ajukan_batal(order_id):
+    if 'pembeli_nama' not in session:
+        return redirect(url_for('login_pembeli'))
+    data    = load_data()
+    pembeli = session['pembeli_nama']
+    alasan_pilihan = request.form.get('alasan_pilihan', '')
+    alasan_chat    = request.form.get('alasan_chat', '').strip()
+    alasan_final   = alasan_pilihan
+    if alasan_chat:
+        alasan_final = f"{alasan_pilihan} — {alasan_chat}" if alasan_pilihan else alasan_chat
+
+    for p in data.get('pesanan', []):
+        if p.get('order_id') == order_id and p.get('pembeli') == pembeli:
+            # Hanya bisa batal kalau belum dikirim/selesai/dibatalkan
+            if p.get('status') in ['Dikirim', 'Selesai', 'Dibatalkan']:
+                flash('Pesanan tidak bisa dibatalkan pada status ini.', 'error')
+                return redirect(url_for('pesanan_saya'))
+            p['status']              = 'Permintaan Batal'
+            p['alasan_batal']        = alasan_final
+            p['waktu_minta_batal']   = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            p['keputusan_batal']     = ''
+            p['alasan_tolak_batal']  = ''
+            break
+
+    save_data(data)
+    flash('Permintaan pembatalan berhasil dikirim ke admin.', 'success')
+    return redirect(url_for('pesanan_saya'))
+
+# ── ADMIN: KEPUTUSAN BATAL ─────────────────────────────────────────────────────
+@app.route('/admin/keputusan-batal/<order_id>', methods=['POST'])
+def keputusan_batal(order_id):
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin'))
+    data       = load_data()
+    keputusan  = request.form.get('keputusan', '')   # 'setuju' atau 'tolak'
+    alasan_tolak = request.form.get('alasan_tolak', '').strip()
+
+    for p in data.get('pesanan', []):
+        if p.get('order_id') == order_id:
+            if keputusan == 'setuju':
+                p['status']          = 'Dibatalkan'
+                p['keputusan_batal'] = 'setuju'
+                p['alasan_tolak_batal'] = ''
+            elif keputusan == 'tolak':
+                p['status']          = 'Diproses'   # kembalikan ke diproses
+                p['keputusan_batal'] = 'tolak'
+                p['alasan_tolak_batal'] = alasan_tolak or 'Permintaan ditolak admin.'
+            break
+
+    save_data(data)
+    flash(f'Keputusan pembatalan order {order_id} berhasil disimpan.', 'success')
+    return redirect(url_for('admin_orders'))
