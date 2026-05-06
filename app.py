@@ -191,7 +191,7 @@ def _simpan_pesanan(metode, extra=None):
         'metode':   metode,
         'status':   'Menunggu Verifikasi' if metode!='COD' else 'Menunggu Konfirmasi',
         'tanggal':  datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'items':    items
+        'produk':   items
     }
     if extra:
         pesanan.update(extra)
@@ -243,7 +243,7 @@ def struk():
         'metode':        pesanan['metode'],
         'status':        pesanan['status'],
         'tanggal':       pesanan['tanggal'],
-        'produk':        pesanan.get('items',[]),
+        'produk':        pesanan.get('produk', pesanan.get('items',[])),
         'nama_penerima': pesanan.get('nama_penerima',''),
         'telepon':       pesanan.get('telepon',''),
         'alamat':        pesanan.get('alamat',''),
