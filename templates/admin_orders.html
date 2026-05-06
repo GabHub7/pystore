@@ -2,23 +2,11 @@
 {% block title %}Orders – PYSTORE Admin{% endblock %}
 {% block head %}
 <style>
-.order-card {
-  background:var(--surface); border:1px solid var(--border);
-  border-radius:16px; margin-bottom:1rem; overflow:hidden;
-}
-.order-head {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:1rem 1.25rem; border-bottom:1px solid var(--border);
-  flex-wrap:wrap; gap:.75rem; background:var(--surface2);
-}
-.order-body { padding:1.25rem; }
-.order-items { margin-top:.75rem; }
-.order-item-row {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:.4rem 0; font-size:.875rem; border-bottom:1px solid var(--border);
-}
-.order-item-row:last-child { border-bottom:none; }
-.status-form { display:flex; gap:.5rem; align-items:center; }
+.order-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:1rem;overflow:hidden;}
+.order-head{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.75rem;background:var(--surface2);}
+.order-body{padding:1.25rem;}
+.order-item-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;font-size:.875rem;border-bottom:1px solid var(--border);}
+.order-item-row:last-child{border-bottom:none;}
 </style>
 {% endblock %}
 {% block content %}
@@ -56,20 +44,33 @@
         </p>
       </div>
     </div>
+
     <div class="order-body">
-      {% if p.metode == 'COD' and p.get('nama_penerima') %}
-      <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;">
-        📦 <strong>{{ p.nama_penerima }}</strong> — {{ p.telepon }}<br>
-        <span class="text-muted">{{ p.alamat }}</span>
-        {% if p.catatan %}<br><span class="text-muted">Catatan: {{ p.catatan }}</span>{% endif %}
-      </div>
-      {% endif %}
-      {% if p.metode == 'Transfer Bank' and p.get('bank_pengirim') %}
-      <p style="font-size:.85rem;color:var(--text2);margin-bottom:.75rem;">🏦 Transfer dari bank: <strong>{{ p.bank_pengirim }}</strong></p>
+      {# INFO COD #}
+      {% if p.metode == 'COD' %}
+        {% if p.nama_penerima %}
+        <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;">
+          📦 <strong>{{ p.nama_penerima }}</strong> — {{ p.telepon }}<br>
+          <span class="text-muted">{{ p.alamat }}</span>
+          {% if p.catatan %}<br><span class="text-muted">Catatan: {{ p.catatan }}</span>{% endif %}
+        </div>
+        {% endif %}
       {% endif %}
 
-      <div class="order-items">
-        {% for item in p.items %}
+      {# INFO TRANSFER #}
+      {% if p.metode == 'Transfer Bank' %}
+        {% if p.bank_pengirim %}
+        <p style="font-size:.85rem;color:var(--text2);margin-bottom:.75rem;">
+          🏦 Transfer dari bank: <strong>{{ p.bank_pengirim }}</strong>
+        </p>
+        {% endif %}
+      {% endif %}
+
+      {# DAFTAR ITEM — pakai produk bukan items (hindari bentrok dict.items()) #}
+      {% set produk_list = p.produk if p.produk is defined else p.items_list if p.items_list is defined else [] %}
+      {% if produk_list %}
+      <div style="margin-bottom:.75rem;">
+        {% for item in produk_list %}
         <div class="order-item-row">
           <span>{{ item.nama }}</span>
           <span class="text-muted">×{{ item.jumlah }}</span>
@@ -77,20 +78,18 @@
         </div>
         {% endfor %}
       </div>
+      {% endif %}
 
-      <div style="margin-top:1rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
-        <form method="POST" action="/admin/update-status/{{ p.order_id }}" class="status-form">
-          <select name="status" style="font-size:.85rem;padding:.4rem .75rem;border-radius:9px;">
-            <option {% if p.status=='Menunggu Verifikasi' %}selected{% endif %}>Menunggu Verifikasi</option>
-            <option {% if p.status=='Menunggu Konfirmasi' %}selected{% endif %}>Menunggu Konfirmasi</option>
-            <option {% if p.status=='Diproses' %}selected{% endif %}>Diproses</option>
-            <option {% if p.status=='Dikirim' %}selected{% endif %}>Dikirim</option>
-            <option {% if p.status=='Selesai' %}selected{% endif %}>Selesai</option>
-            <option {% if p.status=='Dibatalkan' %}selected{% endif %}>Dibatalkan</option>
-          </select>
-          <button type="submit" class="btn btn-secondary btn-sm">Update</button>
-        </form>
-      </div>
+      {# UPDATE STATUS #}
+      <form method="POST" action="/admin/update-status/{{ p.order_id }}"
+            style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;">
+        <select name="status" style="font-size:.85rem;padding:.4rem .75rem;border-radius:9px;">
+          {% for s in ['Menunggu Verifikasi','Menunggu Konfirmasi','Diproses','Dikirim','Selesai','Dibatalkan'] %}
+          <option {% if p.status == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-secondary btn-sm">Update Status</button>
+      </form>
     </div>
   </div>
   {% endfor %}
