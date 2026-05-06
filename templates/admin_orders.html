@@ -7,6 +7,8 @@
 .order-body{padding:1.25rem;}
 .order-item-row{display:flex;justify-content:space-between;align-items:center;padding:.4rem 0;font-size:.875rem;border-bottom:1px solid var(--border);}
 .order-item-row:last-child{border-bottom:none;}
+.batal-box{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);border-radius:12px;padding:1rem 1.25rem;margin-bottom:.75rem;}
+.batal-box p{font-size:.875rem;margin:.2rem 0;}
 </style>
 {% endblock %}
 {% block content %}
@@ -19,6 +21,15 @@
   <a href="/admin/dashboard" class="btn btn-secondary">← Dashboard</a>
 </div>
 
+{# Highlight permintaan batal dulu di atas #}
+{% set ada_batal = pesanan | selectattr('status','equalto','Permintaan Batal') | list %}
+{% if ada_batal %}
+<div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.25);border-radius:14px;padding:.85rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:.75rem;">
+  <span style="font-size:1.25rem;">⚠️</span>
+  <p style="font-size:.875rem;color:#fcd34d;font-weight:600;">Ada <strong>{{ ada_batal|length }}</strong> permintaan pembatalan yang menunggu keputusanmu!</p>
+</div>
+{% endif %}
+
 {% if not pesanan %}
   <div class="card" style="text-align:center;padding:3rem;">
     <p style="font-size:2.5rem;margin-bottom:.75rem;">📋</p>
@@ -27,7 +38,8 @@
   </div>
 {% else %}
   {% for p in pesanan|reverse %}
-  <div class="order-card">
+  <div class="order-card" id="order-{{ p.order_id }}"
+       style="{% if p.status == 'Permintaan Batal' %}border-color:rgba(248,113,113,.4);{% endif %}">
     <div class="order-head">
       <div>
         <p style="font-family:monospace;font-size:.85rem;color:var(--text2);">{{ p.order_id }}</p>
@@ -36,9 +48,17 @@
       </div>
       <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
         <span class="badge badge-purple">{{ p.metode }}</span>
-        <span class="badge {% if 'Selesai' in p.status %}badge-green{% elif 'Menunggu' in p.status %}badge-amber{% else %}badge-blue{% endif %}">
-          {{ p.status }}
-        </span>
+        {% if p.status == 'Permintaan Batal' %}
+          <span class="badge badge-red">🚨 Minta Batal</span>
+        {% elif 'Selesai' in p.status %}
+          <span class="badge badge-green">{{ p.status }}</span>
+        {% elif 'Menunggu' in p.status %}
+          <span class="badge badge-amber">{{ p.status }}</span>
+        {% elif 'Dibatalkan' in p.status %}
+          <span class="badge badge-red">{{ p.status }}</span>
+        {% else %}
+          <span class="badge badge-blue">{{ p.status }}</span>
+        {% endif %}
         <p style="font-family:var(--font-display);font-size:1.1rem;font-weight:800;color:var(--accent2);">
           Rp{{ "{:,}".format(p.total) }}
         </p>
@@ -47,27 +67,23 @@
 
     <div class="order-body">
       {# INFO COD #}
-      {% if p.metode == 'COD' %}
-        {% if p.nama_penerima %}
-        <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;">
-          📦 <strong>{{ p.nama_penerima }}</strong> — {{ p.telepon }}<br>
-          <span class="text-muted">{{ p.alamat }}</span>
-          {% if p.catatan %}<br><span class="text-muted">Catatan: {{ p.catatan }}</span>{% endif %}
-        </div>
-        {% endif %}
+      {% if p.metode == 'COD' and p.nama_penerima %}
+      <div style="background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);border-radius:10px;padding:.75rem 1rem;margin-bottom:.75rem;font-size:.85rem;">
+        📦 <strong>{{ p.nama_penerima }}</strong> — {{ p.telepon }}<br>
+        <span class="text-muted">{{ p.alamat }}</span>
+        {% if p.catatan %}<br><span class="text-muted">Catatan: {{ p.catatan }}</span>{% endif %}
+      </div>
       {% endif %}
 
       {# INFO TRANSFER #}
-      {% if p.metode == 'Transfer Bank' %}
-        {% if p.bank_pengirim %}
-        <p style="font-size:.85rem;color:var(--text2);margin-bottom:.75rem;">
-          🏦 Transfer dari bank: <strong>{{ p.bank_pengirim }}</strong>
-        </p>
-        {% endif %}
+      {% if p.metode == 'Transfer Bank' and p.bank_pengirim %}
+      <p style="font-size:.85rem;color:var(--text2);margin-bottom:.75rem;">
+        🏦 Transfer dari bank: <strong>{{ p.bank_pengirim }}</strong>
+      </p>
       {% endif %}
 
-      {# DAFTAR ITEM — pakai produk bukan items (hindari bentrok dict.items()) #}
-      {% set produk_list = p.produk if p.produk is defined else p.items_list if p.items_list is defined else [] %}
+      {# DAFTAR ITEM #}
+      {% set produk_list = p.produk if p.produk is defined else [] %}
       {% if produk_list %}
       <div style="margin-bottom:.75rem;">
         {% for item in produk_list %}
@@ -80,7 +96,36 @@
       </div>
       {% endif %}
 
-      {# UPDATE STATUS #}
+      {# PERMINTAAN PEMBATALAN — tampil khusus #}
+      {% if p.status == 'Permintaan Batal' %}
+      <div class="batal-box">
+        <p style="font-weight:700;color:#fca5a5;margin-bottom:.5rem;">🚨 Permintaan Pembatalan dari Pembeli</p>
+        <p>Alasan: <strong>{{ p.alasan_batal }}</strong></p>
+        {% if p.waktu_minta_batal %}<p style="color:var(--text3);">Diajukan: {{ p.waktu_minta_batal }}</p>{% endif %}
+
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1rem;">
+          {# SETUJU BATAL #}
+          <form method="POST" action="/admin/keputusan-batal/{{ p.order_id }}"
+                onsubmit="return confirm('Setuju batalkan pesanan ini?')">
+            <input type="hidden" name="keputusan" value="setuju">
+            <button type="submit" class="btn btn-danger btn-sm">✅ Setuju Batalkan</button>
+          </form>
+
+          {# TOLAK BATAL #}
+          <button type="button" class="btn btn-secondary btn-sm"
+                  onclick="bukaModalTolak('{{ p.order_id }}')">
+            🚫 Tolak Pembatalan
+          </button>
+        </div>
+      </div>
+      {% elif p.keputusan_batal == 'tolak' %}
+      <div style="background:var(--blue-dim);border:1px solid rgba(96,165,250,.2);border-radius:10px;padding:.65rem 1rem;margin-bottom:.75rem;font-size:.825rem;color:#93c5fd;">
+        🚫 Pembatalan ditolak — Alasan: {{ p.alasan_tolak_batal }}
+      </div>
+      {% endif %}
+
+      {# UPDATE STATUS NORMAL #}
+      {% if p.status != 'Permintaan Batal' %}
       <form method="POST" action="/admin/update-status/{{ p.order_id }}"
             style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-top:.5rem;">
         <select name="status" style="font-size:.85rem;padding:.4rem .75rem;border-radius:9px;">
@@ -90,8 +135,52 @@
         </select>
         <button type="submit" class="btn btn-secondary btn-sm">Update Status</button>
       </form>
+      {% endif %}
     </div>
   </div>
   {% endfor %}
 {% endif %}
+
+{# ── MODAL TOLAK BATAL ── #}
+<div class="modal-overlay" id="modal-tolak" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(6px);z-index:500;align-items:center;justify-content:center;padding:1rem;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:2rem;max-width:440px;width:100%;">
+    <h3 style="margin-bottom:1.25rem;">🚫 Tolak Permintaan Batal</h3>
+    <form method="POST" id="form-tolak" action="">
+      <input type="hidden" name="keputusan" value="tolak">
+      <div class="form-group">
+        <label>Alasan Penolakan</label>
+        <div style="display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:.75rem;">
+          {% for a in ['Pesanan sudah diproses','Barang sudah dikirim','Tidak memenuhi syarat batal','Alasan tidak valid'] %}
+          <div style="padding:.35rem .85rem;border-radius:20px;font-size:.78rem;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text2);"
+               onclick="pilihAlasanTolak(this, '{{ a }}')">{{ a }}</div>
+          {% endfor %}
+        </div>
+        <textarea name="alasan_tolak" id="alasan_tolak_input" placeholder="Atau tulis alasan sendiri..."></textarea>
+      </div>
+      <div style="display:flex;gap:.75rem;">
+        <button type="submit" class="btn btn-danger">Kirim Penolakan</button>
+        <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('modal-tolak').style.display='none'">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function bukaModalTolak(orderId) {
+  document.getElementById('form-tolak').action = '/admin/keputusan-batal/' + orderId;
+  document.getElementById('alasan_tolak_input').value = '';
+  document.getElementById('modal-tolak').style.display = 'flex';
+}
+function pilihAlasanTolak(el, val) {
+  document.querySelectorAll('#modal-tolak [onclick^="pilihAlasanTolak"]').forEach(function(c){
+    c.style.background='var(--surface2)'; c.style.color='var(--text2)'; c.style.borderColor='var(--border)';
+  });
+  el.style.background='var(--accent)'; el.style.color='#fff'; el.style.borderColor='var(--accent)';
+  document.getElementById('alasan_tolak_input').value = val;
+}
+document.getElementById('modal-tolak').addEventListener('click', function(e){
+  if(e.target===this) this.style.display='none';
+});
+</script>
 {% endblock %}
