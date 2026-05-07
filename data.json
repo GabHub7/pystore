@@ -3,7 +3,7 @@
     {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "stok": 50, "gambar": "https://img.lazcdn.com/g/p/a5f8d345305172403d04212fc8bdbd59.jpg_720x720q80.jpg"},
     {"id": 2, "nama": "Air Mineral 600ml", "harga": 2000, "stok": 100, "gambar": "https://arti-assets.sgp1.cdn.digitaloceanspaces.com/renyswalayanku/products/b4bc9393-9a05-4410-b3e1-b84fc3e4b6d4.jpg"},
     {"id": 3, "nama": "Roti Tawar", "harga": 7000, "stok": 20, "gambar": "https://image.astronauts.cloud/product-images/2025/7/RotitawarJumboRevisi2_bbad0227-c7a3-4788-9628-5dd6144aeed6_900x900.jpg"},
-    {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "stok": 200, "gambar": "https://arti-assets.sgp1.cdn.digitaloceanspaces.com/renyswalayanku/products/b4bc9393-9a05-4410-b3e1-b84fc3e4b6d4.jpg"},
+    {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "stok": 200, "gambar": "https://images.alodokter.com/dk0z4ums3/image/upload/v1592885785/attached_image/inilah-manfaat-telur-dan-cara-menyimpannya-0-alodokter.jpg"},
     {"id": 5, "nama": "Susu UHT 200ml", "harga": 5000, "stok": 30, "gambar": "https://www.jni.co.id/cdn/shop/products/b1d42094-90a1-42a2-bf81-b183d95a2243-fullcream-946ml.jpg?v=1738552499"}
   ],
   "next_id": 6,
