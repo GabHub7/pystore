@@ -170,12 +170,21 @@
 <footer>© 2026 PYSTORE — Toko Online</footer>
 </div>
 
+<script src="p5.min.js"></script>
+<script src="vanta.topology.min.js"></script>
 <script>
-VANTA.WAVES({
-  el:"#vanta-bg", mouseControls:true, touchControls:true, gyroControls:false,
-  minHeight:200, minWidth:200, scale:1, scaleMobile:1,
-  color:0x5200a2, shininess:114, waveSpeed:0.55, zoom:0.72
-});
+VANTA.TOPOLOGY({
+  el: "#your-element-selector",
+  mouseControls: true,
+  touchControls: true,
+  gyroControls: false,
+  minHeight: 200.00,
+  minWidth: 200.00,
+  scale: 1.00,
+  scaleMobile: 1.00,
+  color: 0xb600f7,
+  backgroundColor: 0x100022
+})
 </script>
 {% block scripts %}{% endblock %}
 </body>
