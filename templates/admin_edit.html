@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Edit Barang – PYSTORE{% endblock %}
+{% block content %}
+<div style="max-width:520px;margin:2rem auto;">
+  <div class="page-header">
+    <h1>Edit <span class="accent">Barang</span></h1>
+    <p class="text-muted">{{ item.nama }}</p>
+  </div>
+  <div class="card">
+    <form method="POST" action="/admin/edit/{{ item.id }}" enctype="multipart/form-data">
+      <div class="form-group"><label>Nama Barang</label><input type="text" name="nama" value="{{ item.nama }}" required></div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <div class="form-group" style="flex:1;min-width:120px;"><label>Harga (Rp)</label><input type="number" name="harga" value="{{ item.harga }}" min="0" required></div>
+        <div class="form-group" style="flex:1;min-width:90px;"><label>Stok</label><input type="number" name="stok" value="{{ item.stok }}" min="0" required></div>
+        <div class="form-group" style="flex:1;min-width:120px;">
+          <label>Kategori</label>
+          <select name="kategori">
+            {% for k in kategori_list %}
+            <option {% if item.kategori==k %}selected{% endif %}>{{ k }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Gambar (URL atau upload baru)</label>
+        <input type="text" name="gambar" placeholder="https://... (kosongkan jika tidak ganti)"
+               value="{{ item.gambar if not item.gambar.startswith('data:') else '' }}">
+        <input type="file" name="gambar_file" accept="image/*" style="margin-top:.4rem;width:100%;padding:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);">
+        {% if item.gambar %}
+        <div style="margin-top:.6rem;">
+          <p style="font-size:.7rem;color:var(--text3);margin-bottom:.25rem;">Gambar saat ini:</p>
+          <img src="{{ item.gambar }}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--border);" onerror="this.style.display='none'">
+        </div>
+        {% endif %}
+      </div>
+      <div style="display:flex;gap:.6rem;margin-top:.5rem;">
+        <button type="submit" class="btn btn-primary">💾 Simpan</button>
+        <a href="/admin/dashboard" class="btn btn-secondary">← Batal</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

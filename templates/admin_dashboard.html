@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Admin – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.dash-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;}
+.qris-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem;display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-start;backdrop-filter:blur(16px);}
+.qris-preview{width:100px;height:100px;border-radius:12px;overflow:hidden;background:#fff;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.qris-preview img{width:100%;height:100%;object-fit:contain;}
+.add-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem;backdrop-filter:blur(16px);}
+.prod-row{display:flex;align-items:center;gap:1rem;padding:.8rem 1rem;background:var(--surface2);border:1px solid var(--border);border-radius:14px;margin-bottom:.5rem;flex-wrap:wrap;transition:border-color .18s;}
+.prod-row:hover{border-color:var(--border2);}
+.prod-thumb{width:52px;height:52px;border-radius:10px;overflow:hidden;background:var(--surface3);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.prod-thumb img{width:100%;height:100%;object-fit:cover;}
+.rek-card{display:flex;align-items:center;gap:1rem;background:var(--surface2);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:12px;padding:.8rem 1rem;margin-bottom:.5rem;flex-wrap:wrap;}
+.kat-pill-admin{display:inline-flex;align-items:center;gap:.3rem;padding:3px 10px;border-radius:20px;font-size:.72rem;font-weight:600;background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(124,106,247,.2);}
+</style>
+{% endblock %}
+{% block content %}
+<div class="dash-header">
+  <div>
+    <h1>Admin <span class="accent">Dashboard</span></h1>
+    <p class="text-muted">Kelola produk, QRIS, rekening, dan kategori</p>
+  </div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+    <a href="/admin/orders" class="btn btn-secondary">📋 Orders</a>
+    <a href="/admin/logout" class="btn btn-danger">Logout</a>
+  </div>
+</div>
+
+<!-- QRIS -->
+<p class="section-label">📷 QRIS</p>
+<div class="qris-panel">
+  <div style="flex-shrink:0;text-align:center;">
+    <div class="qris-preview">
+      {% if qris_url %}<img src="{{ qris_url }}" alt="QRIS">
+      {% else %}<span style="font-size:2rem;">📷</span>{% endif %}
+    </div>
+    <p style="font-size:.68rem;margin-top:.35rem;{% if qris_url %}color:var(--green){% else %}color:var(--text3){% endif %};">
+      {% if qris_url %}✓ Aktif{% else %}Belum ada{% endif %}
+    </p>
+  </div>
+  <div style="flex:1;min-width:200px;">
+    <form method="POST" action="/admin/set-qris" enctype="multipart/form-data">
+      <div style="display:flex;gap:.4rem;margin-bottom:.7rem;">
+        <button type="button" class="mode-btn active" id="qbtn-url" onclick="qMode('url')">🔗 URL</button>
+        <button type="button" class="mode-btn" id="qbtn-file" onclick="qMode('file')">📁 Upload</button>
+      </div>
+      <div id="q-url"><input type="text" name="qris_url" placeholder="https://... link gambar QRIS" style="margin-bottom:.6rem;"></div>
+      <div id="q-file" style="display:none;"><input type="file" name="qris_file" accept="image/*" style="width:100%;padding:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);margin-bottom:.6rem;"></div>
+      <button type="submit" class="btn btn-primary btn-sm">💾 Simpan QRIS</button>
+    </form>
+  </div>
+</div>
+
+<!-- REKENING -->
+<p class="section-label">🏦 Rekening Bank</p>
+<div class="add-panel">
+  <form method="POST" action="/admin/tambah-rekening" style="margin-bottom:{% if data.rekening_bank %}1.25rem{% else %}0{% endif %};">
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <div class="form-group" style="flex:2;min-width:110px;margin:0;"><label>Bank</label><input type="text" name="bank" placeholder="BCA, BNI..." required></div>
+      <div class="form-group" style="flex:3;min-width:130px;margin:0;"><label>Nomor Rekening</label><input type="text" name="nomor" placeholder="1234567890" required></div>
+      <div class="form-group" style="flex:2;min-width:110px;margin:0;"><label>Atas Nama</label><input type="text" name="atas_nama" placeholder="Nama pemilik" required></div>
+      <div style="align-self:flex-end;padding-bottom:1.2rem;"><button type="submit" class="btn btn-primary btn-sm">+ Tambah</button></div>
+    </div>
+  </form>
+  {% for rek in data.rekening_bank %}
+  <div class="rek-card">
+    <div style="flex:1;">
+      <p style="font-family:var(--font-d);font-weight:700;color:var(--accent2);font-size:.88rem;">{{ rek.bank }}</p>
+      <p style="font-family:monospace;font-size:1rem;">{{ rek.nomor }}</p>
+      <p style="font-size:.78rem;color:var(--text2);">a.n {{ rek.atas_nama }}</p>
+    </div>
+    <a href="/admin/hapus-rekening/{{ loop.index0 }}" class="btn btn-danger btn-sm" onclick="return confirm('Hapus?')">🗑️</a>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- KATEGORI -->
+<p class="section-label">🏷️ Kategori Produk</p>
+<div class="add-panel">
+  <form method="POST" action="/admin/tambah-kategori" style="display:flex;gap:.5rem;margin-bottom:.85rem;">
+    <input type="text" name="kategori" placeholder="Nama kategori baru..." style="flex:1;" required>
+    <button type="submit" class="btn btn-primary btn-sm">+ Tambah</button>
+  </form>
+  <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+    {% for k in kategori_list %}
+    <div class="kat-pill-admin">
+      {{ k }}
+      <a href="/admin/hapus-kategori/{{ k }}" onclick="return confirm('Hapus kategori {{ k }}?')" style="color:var(--red);text-decoration:none;font-size:.8rem;">✕</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- TAMBAH BARANG -->
+<p class="section-label">➕ Tambah Barang</p>
+<div class="add-panel">
+  <form method="POST" action="/admin/tambah" enctype="multipart/form-data">
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <div class="form-group" style="flex:3;min-width:150px;margin:0;"><label>Nama Barang</label><input type="text" name="nama" placeholder="Nama produk..." required></div>
+      <div class="form-group" style="flex:2;min-width:100px;margin:0;"><label>Harga (Rp)</label><input type="number" name="harga" placeholder="0" min="0" required></div>
+      <div class="form-group" style="flex:1;min-width:80px;margin:0;"><label>Stok</label><input type="number" name="stok" placeholder="100" min="0" value="100" required></div>
+      <div class="form-group" style="flex:2;min-width:120px;margin:0;">
+        <label>Kategori</label>
+        <select name="kategori">
+          {% for k in kategori_list %}<option>{{ k }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group" style="margin-top:.75rem;">
+      <label>Gambar Produk</label>
+      <div style="display:flex;gap:.4rem;margin-bottom:.5rem;">
+        <button type="button" class="mode-btn active" id="btn-url" onclick="setMode('url')">🔗 URL</button>
+        <button type="button" class="mode-btn" id="btn-file" onclick="setMode('lokal')">📁 Upload</button>
+      </div>
+      <div id="mode-url"><input type="text" id="input-url" placeholder="https://..." oninput="syncUrl(this.value)"></div>
+      <div id="mode-lokal" style="display:none;"><input type="file" id="input-file" name="gambar_file" accept="image/*" onchange="handleFile(this)" style="width:100%;padding:.4rem;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);"></div>
+      <div id="img-preview" style="display:none;margin-top:.6rem;"><img id="img-prev-el" src="" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--border);"></div>
+      <input type="hidden" name="gambar" id="gambar-val">
+    </div>
+    <button type="submit" class="btn btn-primary">+ Tambah Barang</button>
+  </form>
+</div>
+
+<!-- DAFTAR BARANG -->
+<p class="section-label">📦 Daftar Barang ({{ barang|length }})</p>
+<div class="card">
+  {% if not barang %}
+    <div style="text-align:center;padding:2rem;"><p class="text-muted">Belum ada barang.</p></div>
+  {% else %}
+    {% for b in barang %}
+    <div class="prod-row">
+      <div class="prod-thumb">
+        {% if b.gambar %}<img src="{{ b.gambar }}" alt="{{ b.nama }}" onerror="this.parentElement.innerHTML='<span style=font-size:1.5rem>🛍️</span>'">
+        {% else %}<span style="font-size:1.5rem;">🛍️</span>{% endif %}
+      </div>
+      <div style="flex:1;min-width:100px;">
+        <p style="font-weight:700;font-size:.92rem;">{{ b.nama }}</p>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-top:2px;">
+          <p style="color:var(--accent2);font-family:var(--font-d);font-weight:700;font-size:.88rem;">Rp{{ "{:,}".format(b.harga) }}</p>
+          {% if b.kategori %}<span style="font-size:.62rem;padding:1px 7px;border-radius:10px;background:var(--accent-dim);color:var(--accent2);">{{ b.kategori }}</span>{% endif %}
+        </div>
+        <p style="font-size:.75rem;margin-top:2px;">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:{% if b.stok<=0 %}var(--red){% elif b.stok<=5 %}var(--gold){% else %}var(--green){% endif %};margin-right:4px;"></span>
+          Stok: {% if b.stok<=0 %}<span style="color:var(--red);">Habis!</span>{% elif b.stok<=5 %}<span style="color:var(--gold);">{{ b.stok }} (Kritis)</span>{% else %}<span class="text-muted">{{ b.stok }}</span>{% endif %}
+        </p>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-shrink:0;">
+        <a href="/admin/edit/{{ b.id }}" class="btn btn-secondary btn-sm">✏️</a>
+        <a href="/admin/hapus/{{ b.id }}" class="btn btn-danger btn-sm" onclick="return confirm('Hapus {{ b.nama }}?')">🗑️</a>
+      </div>
+    </div>
+    {% endfor %}
+  {% endif %}
+</div>
+
+<script>
+function qMode(m){document.getElementById('q-url').style.display=m==='url'?'block':'none';document.getElementById('q-file').style.display=m==='file'?'block':'none';document.getElementById('qbtn-url').className='mode-btn'+(m==='url'?' active':'');document.getElementById('qbtn-file').className='mode-btn'+(m==='file'?' active':'');}
+function setMode(m){var u=m==='url';document.getElementById('mode-url').style.display=u?'block':'none';document.getElementById('mode-lokal').style.display=u?'none':'block';document.getElementById('btn-url').className='mode-btn'+(u?' active':'');document.getElementById('btn-file').className='mode-btn'+(!u?' active':'');}
+function syncUrl(v){document.getElementById('gambar-val').value=v;var p=document.getElementById('img-preview'),i=document.getElementById('img-prev-el');if(v){i.src=v;p.style.display='block';i.onerror=function(){p.style.display='none';};}else{p.style.display='none';}}
+function handleFile(inp){if(!inp.files||!inp.files[0])return;var r=new FileReader();r.onload=function(e){document.getElementById('img-prev-el').src=e.target.result;document.getElementById('img-preview').style.display='block';};r.readAsDataURL(inp.files[0]);}
+</script>
+{% endblock %}

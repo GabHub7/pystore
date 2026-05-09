@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Masuk / Daftar – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.auth-wrap{min-height:calc(100vh - 60px);display:flex;align-items:center;justify-content:center;padding:2rem 1rem;}
+.auth-box{width:100%;max-width:420px;}
+.auth-logo{text-align:center;margin-bottom:1.75rem;}
+.auth-logo h1{font-size:1.6rem;margin-top:.5rem;}
+.auth-logo p{color:var(--text2);font-size:.875rem;margin-top:.25rem;}
+.tab-bar{display:flex;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:1.5rem;gap:4px;}
+.tab-btn{flex:1;padding:.5rem;border-radius:10px;border:none;background:transparent;color:var(--text2);font-family:var(--font-b);font-weight:600;font-size:.85rem;cursor:pointer;transition:all .2s;}
+.tab-btn.active{background:var(--accent);color:#fff;box-shadow:0 0 16px var(--accent-glow);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+.pw-wrap{position:relative;}
+.pw-wrap input{padding-right:2.5rem;}
+.pw-eye{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:1rem;}
+.admin-link{text-align:center;margin-top:1.5rem;}
+.admin-link a{color:var(--text3);font-size:.78rem;text-decoration:none;display:inline-flex;align-items:center;gap:.35rem;transition:color .18s;}
+.admin-link a:hover{color:var(--text2);}
+.divider{display:flex;align-items:center;gap:.75rem;margin:1rem 0;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.divider span{color:var(--text3);font-size:.75rem;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div style="width:56px;height:56px;background:var(--accent-dim);border:1px solid rgba(124,106,247,.3);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto .75rem;">🛍️</div>
+      <h1><span class="accent">PYSTORE</span></h1>
+      <p>Toko online terpercaya untuk kebutuhanmu</p>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab-btn {% if tab=='login' or not tab %}active{% endif %}" onclick="switchTab('login')">Masuk</button>
+      <button class="tab-btn {% if tab=='register' %}active{% endif %}" onclick="switchTab('register')">Daftar</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="tab-panel {% if tab=='login' or not tab %}active{% endif %}" id="panel-login">
+      <div class="card">
+        <form method="POST" action="/login-pembeli">
+          <input type="hidden" name="aksi" value="login">
+          <div class="form-group">
+            <label>Username / Akun</label>
+            <input type="text" name="akun" placeholder="Masukkan username..." autofocus required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="pw-wrap">
+              <input type="password" name="password" id="pw-login" placeholder="••••••••" required>
+              <button type="button" class="pw-eye" onclick="togglePw('pw-login',this)">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:.5rem;">Masuk →</button>
+        </form>
+        <div class="divider"><span>belum punya akun?</span></div>
+        <button class="btn btn-outline btn-full" onclick="switchTab('register')">Daftar Sekarang</button>
+      </div>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="tab-panel {% if tab=='register' %}active{% endif %}" id="panel-register">
+      <div class="card">
+        <form method="POST" action="/login-pembeli">
+          <input type="hidden" name="aksi" value="register">
+          <div class="form-group">
+            <label>Nama Lengkap</label>
+            <input type="text" name="nama" placeholder="Nama lengkap kamu..." required>
+          </div>
+          <div style="display:flex;gap:.75rem;">
+            <div class="form-group" style="flex:1;">
+              <label>Username / Akun</label>
+              <input type="text" name="akun" placeholder="username unik" required>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>No. Handphone</label>
+              <input type="tel" name="telepon" placeholder="08xx..." required>
+            </div>
+          </div>
+          <div style="display:flex;gap:.75rem;">
+            <div class="form-group" style="flex:1;">
+              <label>Password</label>
+              <div class="pw-wrap">
+                <input type="password" name="password" id="pw-reg1" placeholder="••••••••" required>
+                <button type="button" class="pw-eye" onclick="togglePw('pw-reg1',this)">👁️</button>
+              </div>
+            </div>
+            <div class="form-group" style="flex:1;">
+              <label>Konfirmasi Password</label>
+              <div class="pw-wrap">
+                <input type="password" name="konfirmasi_password" id="pw-reg2" placeholder="••••••••" required>
+                <button type="button" class="pw-eye" onclick="togglePw('pw-reg2',this)">👁️</button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Alamat Pengiriman</label>
+            <textarea name="alamat" placeholder="Jl. contoh No.1, RT/RW, Kelurahan, Kecamatan, Kota..." required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Koordinat Lokasi <span style="color:var(--text3);font-weight:400;text-transform:none;">(opsional — untuk kirim COD akurat)</span></label>
+            <div style="display:flex;gap:.5rem;">
+              <input type="text" name="lat" id="reg-lat" placeholder="Latitude: -6.2088" style="flex:1;">
+              <input type="text" name="lng" id="reg-lng" placeholder="Longitude: 106.8456" style="flex:1;">
+            </div>
+            <p style="font-size:.7rem;color:var(--text3);margin-top:.35rem;">
+              💡 Cara dapat koordinat: buka <strong>maps.google.com</strong> di browser →
+              klik kanan lokasi rumahmu → salin dua angka yang muncul (contoh: <em>-6.2088, 106.8456</em>)
+            </p>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top:.25rem;">Buat Akun 🎉</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-link">
+      <a href="/admin">⚙️ Panel Admin</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function switchTab(t){
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='register'));});
+  document.getElementById('panel-login').classList.toggle('active',t==='login');
+  document.getElementById('panel-register').classList.toggle('active',t==='register');
+}
+function togglePw(id,btn){
+  var inp=document.getElementById(id);
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁️':'🙈';
+}
+</script>
+{% endblock %}

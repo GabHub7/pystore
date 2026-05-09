@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}COD – PYSTORE{% endblock %}
+{% block head %}
+<style>
+.pay-wrap{max-width:540px;margin:2rem auto;}
+.pay-icon{width:64px;height:64px;border-radius:18px;background:var(--gold-dim);border:1px solid rgba(240,180,41,.2);display:flex;align-items:center;justify-content:center;font-size:1.8rem;margin:0 auto 1rem;}
+.summary-box{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:1.1rem;margin-bottom:1.25rem;}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:.35rem 0;}
+.summary-row+.summary-row{border-top:1px solid var(--border);padding-top:.7rem;margin-top:.35rem;}
+.total-amt{font-family:var(--font-d);font-size:1.5rem;font-weight:800;color:var(--gold);}
+.coord-box{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:.85rem 1rem;}
+.coord-help{background:var(--accent-dim);border:1px solid rgba(124,106,247,.2);border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:var(--text2);margin-top:.5rem;line-height:1.6;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="pay-wrap">
+  <div style="text-align:center;margin-bottom:1.5rem;">
+    <div class="pay-icon">💵</div>
+    <h1>Bayar di <span class="accent">Tempat</span></h1>
+    <p class="text-muted" style="margin-top:.3rem;font-size:.875rem;">Bayar tunai saat barang tiba</p>
+  </div>
+
+  <div class="summary-box">
+    <div class="summary-row"><span class="text-muted">Order ID</span><span style="font-family:monospace;font-size:.82rem;color:var(--text2);">{{ order_id }}</span></div>
+    <div class="summary-row"><span class="text-muted">Pembeli</span><strong>{{ pembeli }}</strong></div>
+    <div class="summary-row"><span class="text-muted">Total COD</span><span class="total-amt">Rp{{ "{:,}".format(total) }}</span></div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-bottom:1.1rem;">📍 Info Pengiriman</h3>
+    <form method="POST" action="/konfirmasi-cod">
+      <div class="form-group">
+        <label>Nama Penerima</label>
+        <input type="text" name="nama_penerima" value="{{ pembeli }}" required>
+      </div>
+      <div class="form-group">
+        <label>No. Telepon</label>
+        <input type="tel" name="telepon" value="{{ telepon_user }}" placeholder="08xx-xxxx-xxxx" required>
+      </div>
+      <div class="form-group">
+        <label>Alamat Pengiriman</label>
+        <textarea name="alamat" id="cod-alamat" required>{{ alamat_user }}</textarea>
+        {% if alamat_user %}
+        <p style="font-size:.72rem;color:var(--green);margin-top:.3rem;">✓ Otomatis dari profil akun — bisa diubah manual</p>
+        {% endif %}
+      </div>
+
+      <!-- KOORDINAT TANPA API -->
+      <div class="form-group">
+        <label>Koordinat Lokasi <span style="color:var(--text3);font-weight:400;text-transform:none;">(opsional)</span></label>
+        <div class="coord-box">
+          <div style="display:flex;gap:.5rem;margin-bottom:.5rem;">
+            <div style="flex:1;">
+              <label style="font-size:.65rem;margin-bottom:.2rem;">Latitude</label>
+              <input type="text" name="lat" id="lat-inp" placeholder="-6.2088" value="{{ lat_user }}" oninput="updateLink()">
+            </div>
+            <div style="flex:1;">
+              <label style="font-size:.65rem;margin-bottom:.2rem;">Longitude</label>
+              <input type="text" name="lng" id="lng-inp" placeholder="106.8456" value="{{ lng_user }}" oninput="updateLink()">
+            </div>
+          </div>
+          <div id="maps-preview" style="{% if not lat_user %}display:none;{% endif %}">
+            <a id="maps-link" href="https://www.google.com/maps?q={{ lat_user }},{{ lng_user }}" target="_blank"
+               class="btn btn-secondary btn-sm" style="font-size:.75rem;">
+              🗺️ Lihat di Google Maps
+            </a>
+          </div>
+        </div>
+        <div class="coord-help">
+          <strong>💡 Cara dapat koordinat (gratis, tanpa API):</strong><br>
+          1. Buka <strong>maps.google.com</strong> di browser<br>
+          2. Cari atau geser ke lokasi rumahmu<br>
+          3. Klik kanan tepat di titik lokasi<br>
+          4. Salin 2 angka yang muncul (contoh: <em>-6.2088, 106.8456</em>)<br>
+          5. Tempel di kolom Latitude dan Longitude di atas
+        </div>
+        {% if lat_user and lng_user %}
+        <p style="font-size:.72rem;color:var(--accent2);margin-top:.35rem;">📍 Koordinat dari profil: {{ lat_user }}, {{ lng_user }}</p>
+        {% endif %}
+      </div>
+
+      <div class="form-group">
+        <label>Catatan (opsional)</label>
+        <input type="text" name="catatan" placeholder="Patokan atau instruksi khusus...">
+      </div>
+
+      <button type="submit" class="btn btn-full btn-lg" style="background:var(--gold);color:#000;font-weight:700;box-shadow:0 0 20px rgba(240,180,41,.3);">
+        ✅ Konfirmasi Pesanan COD
+      </button>
+    </form>
+  </div>
+  <a href="/keranjang" class="btn btn-ghost btn-full" style="margin-top:.75rem;border:1px solid var(--border);">← Ganti Metode</a>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+function updateLink(){
+  var lat=document.getElementById('lat-inp').value.trim();
+  var lng=document.getElementById('lng-inp').value.trim();
+  var preview=document.getElementById('maps-preview');
+  var link=document.getElementById('maps-link');
+  if(lat&&lng){
+    link.href='https://www.google.com/maps?q='+lat+','+lng;
+    preview.style.display='block';
+  } else {
+    preview.style.display='none';
+  }
+}
+</script>
+{% endblock %}

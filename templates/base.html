@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}PYSTORE{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+  <style>
+    :root{
+      --bg:#070709;--surface:rgba(14,14,18,0.82);--surface2:rgba(21,21,27,0.9);
+      --surface3:#1c1c24;--border:rgba(34,34,46,0.8);--border2:#35354a;
+      --accent:#7c6af7;--accent2:#a78bfa;--accent-glow:rgba(124,106,247,0.3);
+      --accent-dim:rgba(124,106,247,0.12);
+      --gold:#f0b429;--gold-dim:rgba(240,180,41,0.1);
+      --green:#34d399;--green-dim:rgba(52,211,153,0.1);
+      --red:#f87171;--red-dim:rgba(248,113,113,0.1);
+      --blue:#60a5fa;--blue-dim:rgba(96,165,250,0.1);
+      --text:#f0f0f8;--text2:#8b8ba8;--text3:#4a4a65;
+      --radius:16px;
+      --font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-b);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+    #vanta-bg{position:fixed;inset:0;z-index:0;}
+    .layer{position:relative;z-index:1;}
+
+    /* NAV */
+    nav{background:rgba(7,7,9,0.75);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:200;}
+    .nav-logo{font-family:var(--font-d);font-weight:800;font-size:1.3rem;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:8px;}
+    .nav-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);}
+    .nav-right{display:flex;align-items:center;gap:5px;}
+    .nb{display:inline-flex;align-items:center;gap:5px;padding:.38rem .85rem;border-radius:10px;font-size:.82rem;font-weight:500;text-decoration:none;border:none;cursor:pointer;transition:all .18s;font-family:var(--font-b);color:var(--text2);background:transparent;}
+    .nb:hover{color:var(--text);background:rgba(255,255,255,.06);}
+    .nb-primary{background:var(--accent)!important;color:#fff!important;font-weight:600!important;box-shadow:0 0 18px var(--accent-glow);}
+    .nb-primary:hover{opacity:.88;}
+    .nb-outline{border:1px solid var(--border2)!important;color:var(--text)!important;}
+    .nb-outline:hover{border-color:var(--accent)!important;color:var(--accent)!important;}
+    .nb-danger{color:var(--red)!important;}
+    .nb-danger:hover{background:var(--red-dim)!important;}
+    .cart-badge{background:var(--accent);color:#fff;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:20px;min-width:18px;text-align:center;}
+    .admin-badge{background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);color:#93c5fd;font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:20px;}
+    .nav-sep{width:1px;height:16px;background:var(--border2);margin:0 4px;}
+
+    /* FLASH */
+    .flashes{max-width:1100px;margin:.75rem auto 0;padding:0 1.5rem;display:flex;flex-direction:column;gap:.4rem;position:relative;z-index:10;}
+    .flash{padding:.65rem 1rem;border-radius:12px;font-size:.85rem;font-weight:500;display:flex;align-items:center;gap:.5rem;animation:fadeDown .3s ease;backdrop-filter:blur(8px);}
+    @keyframes fadeDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .flash.success{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);color:#6ee7b7;}
+    .flash.error{background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.2);color:#fca5a5;}
+    .flash.info{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:#93c5fd;}
+    .flash.warning{background:rgba(240,180,41,.1);border:1px solid rgba(240,180,41,.2);color:#fcd34d;}
+
+    /* MAIN */
+    main{max-width:1100px;margin:0 auto;padding:2rem 1.5rem 5rem;}
+
+    /* GLASS CARD */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;backdrop-filter:blur(16px);}
+    .card2{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;backdrop-filter:blur(12px);}
+
+    /* BTN */
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:.6rem 1.3rem;border-radius:12px;font-family:var(--font-b);font-weight:600;font-size:.875rem;border:none;cursor:pointer;text-decoration:none;transition:all .18s;white-space:nowrap;}
+    .btn-primary{background:var(--accent);color:#fff;box-shadow:0 0 20px var(--accent-glow);}
+    .btn-primary:hover{opacity:.88;transform:translateY(-1px);}
+    .btn-secondary{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--border);}
+    .btn-secondary:hover{border-color:var(--border2);}
+    .btn-danger{background:var(--red-dim);color:#fca5a5;border:1px solid rgba(248,113,113,.2);}
+    .btn-danger:hover{background:rgba(248,113,113,.18);}
+    .btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border);}
+    .btn-outline:hover{color:var(--text);border-color:var(--border2);}
+    .btn-ghost{background:transparent;color:var(--text2);}
+    .btn-ghost:hover{color:var(--text);}
+    .btn-sm{padding:.32rem .75rem;font-size:.78rem;border-radius:9px;}
+    .btn-lg{padding:.85rem 2rem;font-size:1rem;border-radius:14px;}
+    .btn-full{width:100%;}
+
+    /* FORM */
+    .form-group{margin-bottom:1.1rem;}
+    label{display:block;font-size:.7rem;font-weight:700;color:var(--text2);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-d);}
+    input[type=text],input[type=number],input[type=password],input[type=tel],input[type=email],textarea,select{width:100%;padding:.68rem 1rem;background:rgba(21,21,27,0.85);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:var(--font-b);font-size:.92rem;transition:border-color .18s,box-shadow .18s;outline:none;backdrop-filter:blur(8px);}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+    textarea{resize:vertical;min-height:80px;}
+    ::placeholder{color:var(--text3);}
+    select option{background:#1c1c24;}
+
+    /* HEADINGS */
+    h1{font-family:var(--font-d);font-size:2rem;font-weight:800;letter-spacing:-.5px;}
+    h2{font-family:var(--font-d);font-size:1.4rem;font-weight:700;}
+    h3{font-family:var(--font-d);font-size:1rem;font-weight:700;}
+    .accent{color:var(--accent2);}
+    .text-muted{color:var(--text2);}
+    .text-dim{color:var(--text3);}
+    .page-header{margin-bottom:2rem;}
+    .page-header p{color:var(--text2);margin-top:.3rem;}
+
+    /* TABLE */
+    table{width:100%;border-collapse:collapse;}
+    th{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);font-family:var(--font-d);padding:.6rem 1rem;text-align:left;border-bottom:1px solid var(--border);}
+    td{padding:.8rem 1rem;border-bottom:1px solid var(--border);font-size:.88rem;vertical-align:middle;}
+    tr:last-child td{border-bottom:none;}
+    tr:hover td{background:rgba(255,255,255,.015);}
+
+    /* BADGE */
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;font-size:.66rem;font-weight:700;letter-spacing:.04em;font-family:var(--font-d);}
+    .badge-green{background:var(--green-dim);color:#6ee7b7;border:1px solid rgba(52,211,153,.2);}
+    .badge-amber{background:var(--gold-dim);color:#fcd34d;border:1px solid rgba(240,180,41,.2);}
+    .badge-blue{background:var(--blue-dim);color:#93c5fd;border:1px solid rgba(96,165,250,.2);}
+    .badge-red{background:var(--red-dim);color:#fca5a5;border:1px solid rgba(248,113,113,.2);}
+    .badge-gray{background:rgba(255,255,255,.05);color:var(--text2);border:1px solid var(--border);}
+    .badge-purple{background:var(--accent-dim);color:var(--accent2);border:1px solid rgba(124,106,247,.2);}
+
+    /* MISC */
+    .section-label{font-family:var(--font-d);font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--text3);margin-bottom:.65rem;}
+    .qty-row{display:flex;align-items:center;gap:.5rem;}
+    .qty-row input{width:60px;text-align:center;}
+    .mode-btn{padding:.28rem .8rem;border-radius:8px;font-size:.76rem;font-weight:600;cursor:pointer;border:1px solid var(--border);font-family:var(--font-b);transition:all .18s;background:transparent;color:var(--text2);}
+    .mode-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+    footer{border-top:1px solid var(--border);padding:1.5rem 2rem;text-align:center;color:var(--text3);font-size:.78rem;position:relative;z-index:1;background:rgba(7,7,9,.5);backdrop-filter:blur(12px);}
+    ::-webkit-scrollbar{width:4px;}
+    ::-webkit-scrollbar-track{background:var(--bg);}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+<div id="vanta-bg"></div>
+
+<div class="layer">
+<nav>
+  <a class="nav-logo" href="{% if session.get('admin_logged_in') %}/admin/dashboard{% else %}/{% endif %}">
+    <span class="nav-dot"></span>PYSTORE
+  </a>
+  <div class="nav-right">
+    {% if session.get('admin_logged_in') %}
+      <span class="admin-badge">ADMIN</span>
+      <a href="/admin/dashboard" class="nb">🏠 Dashboard</a>
+      <a href="/admin/orders"    class="nb">📋 Orders</a>
+      <a href="/admin/logout"    class="nb nb-danger">Logout</a>
+    {% elif session.get('pembeli_nama') %}
+      <a href="/keranjang" class="nb nb-outline">
+        🛒 Keranjang
+        {% set n = session.get('keranjang',[])|length %}
+        {% if n > 0 %}<span class="cart-badge">{{ n }}</span>{% endif %}
+      </a>
+      <a href="/pesanan-saya" class="nb">📦 Pesanan</a>
+      <a href="/logout-pembeli" class="nb">👤 {{ session.pembeli_nama[:14] }}</a>
+    {% else %}
+      <a href="/login-pembeli" class="nb nb-primary">Masuk / Daftar →</a>
+      <div class="nav-sep"></div>
+      <a href="/admin" class="nb" style="font-size:.75rem;color:var(--text3);">⚙️ Admin</a>
+    {% endif %}
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer>© 2026 PYSTORE — Toko Online</footer>
+</div>
+
+<script>
+VANTA.WAVES({
+  el:"#vanta-bg", mouseControls:true, touchControls:true, gyroControls:false,
+  minHeight:200, minWidth:200, scale:1, scaleMobile:1,
+  color:0x5200a2, shininess:114, waveSpeed:0.55, zoom:0.72
+});
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
