@@ -1,9 +1,10 @@
 {
   "barang": [
-    {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "stok": 50, "gambar": "", "kategori": "Makanan"},
-    {"id": 2, "nama": "Air Mineral 600ml", "harga": 2000, "stok": 100, "gambar": "", "kategori": "Minuman"},
-    {"id": 3, "nama": "Roti Tawar", "harga": 7000, "stok": 20, "gambar": "", "kategori": "Makanan"},
-    {"id": 4, "nama": "Susu UHT 200ml", "harga": 5000, "stok": 30, "gambar": "", "kategori": "Minuman"}
+    {"id": 1, "nama": "Indomie Goreng", "harga": 3000, "stok": 50, "gambar": "https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?w=400&h=400&fit=crop", "kategori": "Makanan"},
+    {"id": 2, "nama": "Air Mineral 600ml", "harga": 2000, "stok": 100, "gambar": "https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=400&h=400&fit=crop", "kategori": "Minuman"},
+    {"id": 3, "nama": "Roti Tawar", "harga": 7000, "stok": 20, "gambar": "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400&h=400&fit=crop", "kategori": "Makanan"},
+    {"id": 4, "nama": "Telur (1 butir)", "harga": 1500, "stok": 200, "gambar": "https://images.unsplash.com/photo-1582722872445-44dc5f7e3c8f?w=400&h=400&fit=crop", "kategori": "Makanan"},
+    {"id": 5, "nama": "Susu UHT 200ml", "harga": 5000, "stok": 30, "gambar": "https://images.unsplash.com/photo-1563636619-e9143da7973b?w=400&h=400&fit=crop", "kategori": "Minuman"}
   ],
   "next_id": 6,
   "rekening_bank": [],
